@@ -242,7 +242,7 @@ int backProp(int showCost)
                         dotSum1 = 0;
                         for (k = 0; k < npl[LAYERS]; k++)
                         {
-                            dotSum1 += weightProduct[k][i]*trainingInputs[nthExample][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
+                            dotSum1 += weightProduct[k][i]*activationsConv[npl[0]][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
                         }
                         weightGradients[layer-1][i][j] += LEARN_RATE*dotSum1;
                     }
