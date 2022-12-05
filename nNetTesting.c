@@ -8,7 +8,7 @@
 #include "..\\FileIO\\dataReader.h"
 #include "neuralNet.h"
 
-#define TRAIN_MULTIPLE 1
+#define TRAIN_MULTIPLE 0
 // --- --- --- --- --- --- --- --- --- main --- --- --- --- --- --- --- --- ---
 
 int main()

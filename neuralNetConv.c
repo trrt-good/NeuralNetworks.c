@@ -35,7 +35,7 @@ float *testingOutputs[NUM_TESTING_EXAMPLES];
 // convolution operation is basically a dot product, it isn't necessary to 
 // use a 2d array.
 float *kernels[CONV_LAYERS]; 
-float *kernelGradients[CONV_LAYERS];
+float **kernelGradients[CONV_LAYERS]; // the acutal gradient is only stored in the first row of each 2d matrix. A matrix is used for calculating the gradient.
 
 float **weights[LAYERS];
 float **weightGradients[LAYERS]; // holds the changes to weights per iteration
@@ -177,7 +177,6 @@ float totalCost()
     }
     return sum;
 }
-
 int backProp(int showCost)
 {
     // const int EXAMPLES_PER_BATCH = (MINI_BATCHES)? NUM_TRAINING_EXAMPLES/MINI_BATCHES : 0;
@@ -187,8 +186,8 @@ int backProp(int showCost)
     int layer;
     int batch;
     int i, j, k, l;
-    float weightDotSum = 0;
-    float biasDotSum = 0;
+    float dotSum1 = 0;
+    float dotSum2 = 0;
     float diff;
     for (i = LAYERS+1; i--;)
         largestLayerSize = max(largestLayerSize, npl[i]);
@@ -212,51 +211,61 @@ int backProp(int showCost)
                 // set the weight product to the last layer's weight
                 laa_copyMatrixValues(weights[LAYERS-1], weightProduct, npl[LAYERS], npl[LAYERS-1]);
 
-                for (layer = LAYERS-2; layer > 0; layer--)
+                for (layer = LAYERS-2; layer > 1; layer--)
                 {
                     multiplyReplace(weightProduct, npl[layer+2], npl[layer+1], weights[layer], npl[layer+1], npl[layer], weightProductBuffer);
-                    if (layer == 1) 
+                    for (i = 0; i < npl[layer]; i ++)
                     {
-                        for (i = 0; i < npl[layer]; i ++)
+                        for (j = 0; j < npl[layer-1]; j++)
                         {
-                            for (j = 0; j < npl[layer-1]; j++)
-                            {
-                                weightDotSum = 0;
-                                for (k = 0; k < npl[LAYERS]; k++)
-                                {
-                                    weightDotSum += weightProduct[k][i]*activationsConv[CONV_LAYERS-1][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
-                                }
-                                weightGradients[layer-1][i][j] += LEARN_RATE*weightDotSum;
-                            }
-
-                            biasDotSum = 0;
+                            dotSum1 = 0;
                             for (k = 0; k < npl[LAYERS]; k++)
                             {
-                                biasDotSum += weightProduct[k][i]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
+                                dotSum1 += weightProduct[k][i]*activations[layer-1][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
                             }
-                            biasGradients[layer-1][i] += LEARN_RATE*biasDotSum;
+                            weightGradients[layer-1][i][j] += LEARN_RATE*dotSum1;
                         }
-                    }
-                    else
-                    {
-                        for (i = 0; i < npl[layer]; i ++)
-                        {
-                            for (j = 0; j < npl[layer-1]; j++)
-                            {
-                                weightDotSum = 0;
-                                for (k = 0; k < npl[LAYERS]; k++)
-                                {
-                                    weightDotSum += weightProduct[k][i]*activations[layer-1][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
-                                }
-                                weightGradients[layer-1][i][j] += LEARN_RATE*weightDotSum;
-                            }
 
-                            biasDotSum = 0;
-                            for (k = 0; k < npl[LAYERS]; k++)
+                        dotSum2 = 0;
+                        for (k = 0; k < npl[LAYERS]; k++)
+                        {
+                            dotSum2 += weightProduct[k][i]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
+                        }
+                        biasGradients[layer-1][i] += LEARN_RATE*dotSum2;
+                    }
+                }
+                multiplyReplace(weightProduct, npl[layer+2], npl[layer+1], weights[layer], npl[layer+1], npl[layer], weightProductBuffer);
+                for (i = 0; i < npl[layer]; i ++)
+                {
+                    for (j = 0; j < npl[layer-1]; j++)
+                    {
+                        dotSum1 = 0;
+                        for (k = 0; k < npl[LAYERS]; k++)
+                        {
+                            dotSum1 += weightProduct[k][i]*trainingInputs[nthExample][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
+                        }
+                        weightGradients[layer-1][i][j] += LEARN_RATE*dotSum1;
+                    }
+
+                    dotSum2 = 0;
+                    for (k = 0; k < npl[LAYERS]; k++)
+                    {
+                        dotSum2 += weightProduct[k][i]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
+                    }
+                    biasGradients[layer-1][i] += LEARN_RATE*dotSum2;
+                }
+                //gradient calculation for convolution layers
+                for (layer = CONV_LAYERS-1; layer >= 0; layer --)
+                {
+                    for (i = 0; i < npc[layer+1]; i ++)
+                    {
+                        for (j = 0; j < npc[layer+1]; j ++)
+                        {
+                            for (k = 0; k < spk[layer]*spk[layer]; k ++)
                             {
-                                biasDotSum += weightProduct[k][i]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
+                                dotSum1 += activationsConv[layer][(i*npc[layer] + j) + k%spk[layer] + k/spk[layer]*npc[layer]]*weightProduct[]; //loops through the 
                             }
-                            biasGradients[layer-1][i] += LEARN_RATE*biasDotSum;
+                            destination[i*outputWidth+j] = dotSum;
                         }
                     }
                 }
@@ -273,53 +282,48 @@ int backProp(int showCost)
             // set the weight product to the last layer's weight
             laa_copyMatrixValues(weights[LAYERS-1], weightProduct, npl[LAYERS], npl[LAYERS-1]);
 
-            for (layer = LAYERS-2; layer > 0; layer--)
+            for (layer = LAYERS-2; layer > 1; layer--)
             {
                 multiplyReplace(weightProduct, npl[layer+2], npl[layer+1], weights[layer], npl[layer+1], npl[layer], weightProductBuffer);
-                if (layer == 1) 
+                for (i = 0; i < npl[layer]; i ++)
                 {
-                    for (i = 0; i < npl[layer]; i ++)
+                    for (j = 0; j < npl[layer-1]; j++)
                     {
-                        for (j = 0; j < npl[layer-1]; j++)
-                        {
-                            weightDotSum = 0;
-                            for (k = 0; k < npl[LAYERS]; k++)
-                            {
-                                weightDotSum += weightProduct[k][i]*trainingInputs[nthExample][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
-                            }
-                            weightGradients[layer-1][i][j] += LEARN_RATE*weightDotSum;
-                        }
-
-                        biasDotSum = 0;
+                        dotSum1 = 0;
                         for (k = 0; k < npl[LAYERS]; k++)
                         {
-                            biasDotSum += weightProduct[k][i]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
+                            dotSum1 += weightProduct[k][i]*activations[layer-1][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
                         }
-                        biasGradients[layer-1][i] += LEARN_RATE*biasDotSum;
+                        weightGradients[layer-1][i][j] += LEARN_RATE*dotSum1;
                     }
-                }
-                else
-                {
-                    for (i = 0; i < npl[layer]; i ++)
-                    {
-                        for (j = 0; j < npl[layer-1]; j++)
-                        {
-                            weightDotSum = 0;
-                            for (k = 0; k < npl[LAYERS]; k++)
-                            {
-                                weightDotSum += weightProduct[k][i]*activations[layer-1][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
-                            }
-                            weightGradients[layer-1][i][j] += LEARN_RATE*weightDotSum;
-                        }
 
-                        biasDotSum = 0;
-                        for (k = 0; k < npl[LAYERS]; k++)
-                        {
-                            biasDotSum += weightProduct[k][i]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
-                        }
-                        biasGradients[layer-1][i] += LEARN_RATE*biasDotSum;
+                    dotSum2 = 0;
+                    for (k = 0; k < npl[LAYERS]; k++)
+                    {
+                        dotSum2 += weightProduct[k][i]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
                     }
+                    biasGradients[layer-1][i] += LEARN_RATE*dotSum2;
                 }
+            }
+            multiplyReplace(weightProduct, npl[layer+2], npl[layer+1], weights[layer], npl[layer+1], npl[layer], weightProductBuffer);
+            for (i = 0; i < npl[layer]; i ++)
+            {
+                for (j = 0; j < npl[layer-1]; j++)
+                {
+                    dotSum1 = 0;
+                    for (k = 0; k < npl[LAYERS]; k++)
+                    {
+                        dotSum1 += weightProduct[k][i]*trainingInputs[nthExample][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
+                    }
+                    weightGradients[layer-1][i][j] += LEARN_RATE*dotSum1;
+                }
+
+                dotSum2 = 0;
+                for (k = 0; k < npl[LAYERS]; k++)
+                {
+                    dotSum2 += weightProduct[k][i]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
+                }
+                biasGradients[layer-1][i] += LEARN_RATE*dotSum2;
             }
         }
         subtractGradients();
