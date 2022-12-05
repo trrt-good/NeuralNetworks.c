@@ -6,7 +6,7 @@
 #include <profileapi.h>
 #include "..\\LinearAlg\\linearAlg.h"
 #include "..\\FileIO\\dataReader.h"
-#include "neuralNet.h"
+#include "neuralNetConv.h"
 
 #define RELU(a) ((a<0)? 0 : 1)
 
@@ -15,17 +15,27 @@
  * which the neural network is built from.
  * Index 0 of the array is how many input neurons there are.
  * The last index is how many output neurons there are.
- * There can be as many numbers inbetween as desired and each
- * symbolizes the number of hidden neurons there are in the layer
- * corresponding to it's index.
+ * The numbers in npl from index 1 to CONV_LAYERS represent the width
+ * of the convolution layer at that index, assuming the convolution
+ * layer is a square. Does not support non square layers. 
  */
-const int npl[LAYERS + 1] = {4, 5, 5, 3};
+const int npl[LAYERS + 1] = {100, 25, 15, 10};
+const int npc[CONV_LAYERS + 1] = {28, 12, 10};
+const int spk[CONV_LAYERS] = {5, 3}; //width of each square kernel. Does not support non square kernels
+//the stride of each kernel. The horizontal and vertical stride must be the same, which is why there is only one number for each kernel. 
+const int strides[CONV_LAYERS] = {2, 1}; 
 
 float *trainingInputs[NUM_TRAINING_EXAMPLES];
 float *trainingOutputs[NUM_TRAINING_EXAMPLES];
 
 float *testingInputs[NUM_TESTING_EXAMPLES];
 float *testingOutputs[NUM_TESTING_EXAMPLES];
+
+// even though kernels are usually represented as a 2d matrix, because the 
+// convolution operation is basically a dot product, it isn't necessary to 
+// use a 2d array.
+float *kernels[CONV_LAYERS]; 
+float *kernelGradients[CONV_LAYERS];
 
 float **weights[LAYERS];
 float **weightGradients[LAYERS]; // holds the changes to weights per iteration
@@ -34,6 +44,7 @@ float *biases[LAYERS];
 float *biasGradients[LAYERS]; // holds the changes to biases per iteration
 
 float *activations[LAYERS];
+float *activationsConv[CONV_LAYERS]; //even though these can be thought of as 2d images, it's easier to code as a vector. 
 
 //function declairations
 void computeOneActivation(float **matrix, int rows, int columns, float *multVect, float *addVect, float *destination);
@@ -42,19 +53,51 @@ void computeLast2LayerGradients(float *outputData);
 void subtractGradients();
 void runData(float inputs[npl[0]]);
 
+void verifyNetwork()
+{
+    int i;
+    if (npl[0] != npc[CONV_LAYERS]*npc[CONV_LAYERS])
+    {
+        printf("npl[0] must equal npc[CONV_LAYERS]*npc[CONV_LAYERS]");
+        exit(1);
+    }
+    for (i = 0; i < CONV_LAYERS; i ++)
+    {
+        if (!(spk[i]&1)) //if the kernel size is even
+        {
+            printf("kernel size must be odd!");
+            exit(1);
+        }
+        int correctSize = (npl[i] - (spk[i]-1)) / (strides[i]*strides[i]);
+        if (npc[i+1] != correctSize) //if the size of the convolution layer is wrong
+        {
+            printf("Invalid convolution layer size! based on the kernel and stride, the convolution layer at npl[%d] should be %d", i+1, correctSize);
+            exit(1);
+        }
+    }
+}
+
 void initNetwork()
 {
     srand(time(NULL));
     int i;
     for (i = 0; i < NUM_TRAINING_EXAMPLES; i++)
     {
-        trainingInputs[i] = laa_allocVectorRaw(npl[0]);
+        trainingInputs[i] = laa_allocVectorRaw(npc[0]*npc[0]);
         trainingOutputs[i] = laa_allocVectorRaw(npl[LAYERS]);
     }
     for (i = 0; i < NUM_TESTING_EXAMPLES; i++)
     {
-        testingInputs[i] = laa_allocVectorRaw(npl[0]);
+        testingInputs[i] = laa_allocVectorRaw(npc[0]*npc[0]);
         testingOutputs[i] = laa_allocVectorRaw(npl[LAYERS]);
+    }
+
+    for (i = 0; i < CONV_LAYERS; i ++)
+    {
+        kernels[i] = laa_allocRandVector(spk[i]*spk[i]);
+        kernelGradients[i] = laa_allocVector(spk[i]*spk[i], 0);
+
+        activationsConv[i] = laa_allocVector(npc[i+1]*npc[i+1], 0);
     }
 
     for (i = 0; i < LAYERS; i++)
@@ -94,9 +137,14 @@ void loadData(char* fileName, char* delimiter, int bufferSize)
     // laa_printMatrix(testingOutputs, NUM_TESTING_EXAMPLES, npl[LAYERS]);
 }
 
-void runData(float inputs[npl[0]])
+void runData(float inputs[npc[0]])
 {
-    computeOneActivation(weights[0], npl[1], npl[0], inputs, biases[0], activations[0]);
+    computeConvolutionLayer(inputs, npc[0], kernels[0], spk[0], strides[0], activationsConv[0])
+    for (int i = 1; i < CONV_LAYERS; i ++)
+    {
+        computeConvolutionLayer(activationsConv[i-1], npc[i], kernels[i], spk[i], strides[i], activationsConv[i])
+    }
+    computeOneActivation(weights[0], npl[1], npl[0], activationsConv[CONV_LAYERS-1], biases[0], activations[0]);
     int i;
     for (i = 1; i < LAYERS; i++)
     {
@@ -176,7 +224,7 @@ int backProp(int showCost)
                                 weightDotSum = 0;
                                 for (k = 0; k < npl[LAYERS]; k++)
                                 {
-                                    weightDotSum += weightProduct[k][i]*trainingInputs[nthExample][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
+                                    weightDotSum += weightProduct[k][i]*activationsConv[CONV_LAYERS-1][j]*(activations[LAYERS-1][k]-trainingOutputs[nthExample][k]);
                                 }
                                 weightGradients[layer-1][i][j] += LEARN_RATE*weightDotSum;
                             }
@@ -323,10 +371,10 @@ void subtractGradients()
         {
             for (j = 0; j < npl[layer]; j++)
             {
-                weights[layer][i][j] -= weightGradients[layer][i][j] * 1 / NUM_TRAINING_EXAMPLES;
+                weights[layer][i][j] -= weightGradients[layer][i][j]/ NUM_TRAINING_EXAMPLES;
                 weightGradients[layer][i][j] = 0;
             }
-            biases[layer][i] -= biasGradients[layer][i] * 1 / NUM_TRAINING_EXAMPLES;
+            biases[layer][i] -= biasGradients[layer][i] / NUM_TRAINING_EXAMPLES;
             biasGradients[layer][i] = 0;
         }
     }
@@ -461,6 +509,24 @@ void computeOneActivation(float **weights, int rows, int columns, float *preLaye
     {
         // destination[i] = max(0, laa_dot(preLayer, weights[i], columns) + bias[i]);
         destination[i] = laa_dot(preLayer, weights[i], columns) + bias[i];
+    }
+}
+
+void computeConvolutionLayer(float* input, int width, float* kernel, const int kernelSize, int stride, float* destination)
+{
+    int outputWidth = width-(kernelSize-1);
+    int i, j, k;
+    float dotSum = 0;
+    for (i = 0; i < outputWidth; i ++)
+    {
+        for (j = 0; j < outputWidth; j ++)
+        {
+            for (k = 0; k < kernelSize*kernelSize; k ++)
+            {
+                dotSum += input[(i*width + j) + k%kernelSize + k/kernelSize*width]*kernel[k];
+            }
+            destination[i*outputWidth+j] = dotSum;
+        }
     }
 }
 
