@@ -77,6 +77,11 @@ void verifyNetwork()
     }
 }
 
+/**
+ * @brief initializes the network's basic layers, convolution layers, kernels, 
+ * weights biases and the gradients for each parameter.
+ * 
+ */
 void initNetwork()
 {
     srand(time(NULL));
