@@ -480,7 +480,7 @@ void multiplyReplace(float **a_matrixVals, int a_rows, int a_columns, float **b_
             {
                 sum += buffer[k] * b_matrixVals[k][j];
             }
-            a_matrixVals[i][j] = sum;
+            a_matrixVals[i][j] = sum; 
         }
     }
 }
