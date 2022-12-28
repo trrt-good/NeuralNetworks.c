@@ -280,7 +280,7 @@ int backProp(int showCost)
         {
             runData(trainingInputs[nthExample]);
 
-            // compute the last layer two gradients so that the rest can be calculated in a simple algorithm 
+            // compute the last layer two gradients so that the rest can be calculated in a simple algorithm  
             computeLast2LayerGradients(trainingOutputs[nthExample]);
 
             // set the weight product to the last layer's weight
