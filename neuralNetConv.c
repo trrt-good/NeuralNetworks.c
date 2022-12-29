@@ -261,14 +261,14 @@ int backProp(int showCost)
                 }
                 //gradient calculation for convolution layers
                 for (layer = CONV_LAYERS-1; layer >= 0; layer --)
-                {
+                {  
                     for (i = 0; i < npc[layer+1]; i ++)
                     {
                         for (j = 0; j < npc[layer+1]; j ++)
                         {
                             for (k = 0; k < spk[layer]*spk[layer]; k ++)
                             {
-                                dotSum1 += activationsConv[layer][(i*npc[layer] + j) + k%spk[layer] + k/spk[layer]*npc[layer]]*weightProduct[]; //loops through the weights 
+                                dotSum1 += activationsConv[layer][(i*npc[layer] + j) + k%spk[layer] + k/spk[layer]*npc[layer]]*weightProduct[]; //loops through the weights  
                             }
                         }
                     }
