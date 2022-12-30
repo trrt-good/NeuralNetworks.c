@@ -269,7 +269,7 @@ int backProp(int showCost)
                             for (k = 0; k < spk[layer]*spk[layer]; k ++)
                             {
                                 dotSum1 += activationsConv[layer][(i*npc[layer] + j) + k%spk[layer] + k/spk[layer]*npc[layer]]*weightProduct[]; //loops through the weights  
-                            }
+                            } 
                         }
                     }
                 }
