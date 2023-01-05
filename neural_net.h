@@ -53,7 +53,6 @@ void nnet_free_training_set(TrainingSet *set);
 void nnet_reset_network(NeuralNet* nnet);
 
 void nnet_load_data(TrainingSet* training_set, TestingSet* testing_set, char* fileName, char* delimiter, int bufferSize);
-
 float* nnet_run_data(float inputs[INPUT_LAYER_SIZE], NeuralNet* nnet);
 
 int nnet_backprop(NeuralNet* nnet, TrainingSet* training_set, int num_mini_batches, int iterations, float learn_rate);

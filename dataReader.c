@@ -25,48 +25,11 @@ void swap(float** arr, int i, int j)
     arr[j] = temp;
 }
 
-float **allocMatrix(int rows, int columns, float initialValue)
-{
-    int i, j;
-
-    float **matrixEntries = (float **)malloc(rows * sizeof(float *));
-    if (!matrixEntries)
-        exit(1);
-
-    for (i = 0; i < rows; i++)
-    {
-        matrixEntries[i] = (float *)malloc(columns * sizeof(float));
-        if (!matrixEntries[i])
-        {
-            for (; i > 0; i--)
-                free(matrixEntries[i - 1]);
-            free(matrixEntries);
-            exit(1);
-        }
-        for (j = 0; j < columns; j++)
-        {
-            matrixEntries[i][j] = initialValue;
-        }
-    }
-    return matrixEntries;
-}
-
-void freeMatrix(float **matrix, int rows)
-{
-    int i;
-    for (i = 0; i < rows; i++)
-    {
-        free(matrix[i]);
-    }
-    free(matrix);
-    return;
-}
-
 int readRowData_ML(char* fileName, char* delimiter, int bufferSize, int totalDataPoints, int numTesting, int numInputs, int numOutputs, float **trainingInputArr, float **trainingOutputsArr, float **testingInputArr, float **testingOutputArr, int randomizeOrder)
 {
     srand(time(NULL));
-    float** allInputs = allocMatrix(totalDataPoints, numInputs, 0);
-    float** allOutputs = allocMatrix(totalDataPoints, numOutputs, 0);
+    float** allInputs = laa_allocMatrix(totalDataPoints, numInputs, 0);
+    float** allOutputs = laa_allocMatrix(totalDataPoints, numOutputs, 0);
     char strBuffer[bufferSize];
     char* stringToken;
     int i, j, nthExample = 0;
@@ -129,7 +92,7 @@ int readRowData_ML(char* fileName, char* delimiter, int bufferSize, int totalDat
             }
         }
     }
-    freeMatrix(allInputs, totalDataPoints);
-    freeMatrix(allOutputs, totalDataPoints);
+    laa_freeMatrix(allInputs, totalDataPoints);
+    laa_freeMatrix(allOutputs, totalDataPoints);
     fclose(filePointer);
 }

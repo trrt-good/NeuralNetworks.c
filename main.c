@@ -2,7 +2,6 @@
 #include "neural_net.h"
 #include <profileapi.h>
 
-
 //use gradient descent to find the optimal learn rate
 #define LEARN_RATE 0.007
 #define ITERATIONS 5000
@@ -16,8 +15,6 @@ int main()
 {
 
     NeuralNet* nnet = nnet_init();
-    
-
     TrainingSet* training_set = nnet_training_set_init(NUM_TRAINING_EXAMPLES);
     TestingSet* test_set = nnet_testing_set_init(NUM_TESTING_EXAMPLES);
     nnet_load_data(training_set, test_set, "Data/iris.txt", ",", 63);
