@@ -16,10 +16,10 @@
 typedef struct neural_network
 {
     float **weights[LAYERS];
-    float **weightGradients[LAYERS]; // holds the changes to weights per iteration
+    float **weight_gradients[LAYERS]; // holds the changes to weights per iteration
 
     float *biases[LAYERS];
-    float *biasGradients[LAYERS]; // holds the changes to biases per iteration
+    float *bias_gradients[LAYERS]; // holds the changes to biases per iteration
 
     float *activations[LAYERS];
 
@@ -29,16 +29,16 @@ typedef struct neural_network
 
 typedef struct training_set
 {
-    int training_examples;
-    float **training_inputs;
-    float **training_outputs;
+    int num_examples;
+    float **inputs;
+    float **outputs;
 } TrainingSet;
 
 typedef struct testing_set
 {
-    int testing_examples;
-    float **testing_inputs;
-    float **testing_outputs;
+    int num_examples;
+    float **inputs;
+    float **outputs;
 } TestingSet;
 
 void nnet_print(NeuralNet* nnet);
