@@ -8,11 +8,12 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "neural_net.c",
-                "linearAlg.c",
-                "dataReader.c",
+                "LinearAlg\\linearAlg.c",
+                "DataReader\\dataReader.c",
                 "main.c",
                 "-o",
-                "nnet.exe"
+                "nnet.exe",
+                "-fopenmp"
             ],
             "options": {
                 "cwd": "${fileDirname}"

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 #include <time.h>
 #include "dataReader.h"
@@ -55,8 +54,7 @@ int readRowData_ML(char* fileName, char* delimiter, int bufferSize, int totalDat
         for (i = 0; i < numOutputs && stringToken != NULL; i ++)
         {
             allOutputs[nthExample][i] = (float)atof(stringToken);
-            
-
+        
             stringToken = strtok(NULL, delimiter);
         }
         if (randomizeOrder)

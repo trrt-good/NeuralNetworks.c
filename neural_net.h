@@ -17,14 +17,16 @@ This header file contains declarations for a neural network implemented in C.
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <omp.h>
 #include "..\\LinearAlg\\linearAlg.h"
 #include "..\\FileIO\\dataReader.h"
 
 // LAYERS does not include the input layer
-#define LAYERS 3 
+#define LAYERS 4
 #define INPUT_LAYER_SIZE 4
-#define HIDDEN_LAYER_SIZES 5, 5
+#define HIDDEN_LAYER_SIZES 20, 20, 20
 #define OUTPUT_LAYER_SIZE 3
+#define MAX_THREADS 8 //can be checked using omp_get_max_threads()
 
 /*
 The neural_network struct represents a neural network with multiple layers.
@@ -34,15 +36,7 @@ It also has activations for each layer, as well as intermediate values used in c
 typedef struct neural_network
 {
     float **weights[LAYERS];
-    float **weight_gradients[LAYERS]; // holds the changes to weights per iteration
-
     float *biases[LAYERS];
-    float *bias_gradients[LAYERS]; // holds the changes to biases per iteration
-
-    float *activations[LAYERS];
-
-    float** weight_product; //used in calculating the gradients
-    float* weight_product_buffer; //used in calculating the weight product
 } NeuralNet;
 
 /*
@@ -76,10 +70,11 @@ void nnet_free_test_set(TestingSet *set);
 void nnet_free_training_set(TrainingSet *set);
 void nnet_reset_network(NeuralNet* nnet);
 void nnet_load_data(TrainingSet* training_set, TestingSet* testing_set, char* fileName, char* delimiter, int bufferSize);
-float* nnet_run_data(float inputs[INPUT_LAYER_SIZE], NeuralNet* nnet);
+float* nnet_run_data(float inputs[INPUT_LAYER_SIZE], NeuralNet* nnet, float* activations[LAYERS]);
 int nnet_backprop(NeuralNet* nnet, TrainingSet* training_set, int num_mini_batches, int iterations, float learn_rate);
-int nnet_iterate_gradients(NeuralNet* nnet, float* training_input, float* training_output);
-void nnet_subtract_gradients(NeuralNet* nnet, float learn_rate, int num_training_examples);
+int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int iterations, float learn_rate);
+int nnet_iterate_gradients(NeuralNet *nnet, float* activations[LAYERS], float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float** weight_product, float* weight_product_buffer, float *training_input, float *training_output);
+void nnet_subtract_gradients(NeuralNet *nnet, float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float learn_rate, int num_training_examples);
 float nnet_total_cost(NeuralNet* nnet, TrainingSet* set);
 float nnet_test_results(NeuralNet* nnet, TestingSet* test_set, int print_each_test, int print_results);
 void nnet_print(NeuralNet* nnet);

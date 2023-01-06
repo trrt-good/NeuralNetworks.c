@@ -4,7 +4,7 @@
             "name": "C/C++: gcc.exe build and debug active file",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}\\nnet.exe",
+            "program": "${fileDirname}\\bin\\nnet.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",

@@ -356,7 +356,7 @@ float *laa_allocRandVector(int rows)
         exit(1);
     for (i = 0; i < rows; i++)
     {
-        vector[i] = ((float)rand() / (float)(RAND_MAX));
+        vector[i] = ((float)rand() / (float)(RAND_MAX))-0.5;
     }
     return vector;
 }
@@ -399,7 +399,7 @@ void laa_setVectorToRand(float *vector, int rows)
     int i;
     for (i = 0; i < rows; i++)
     {
-        vector[i] = ((float)rand()) / ((float)RAND_MAX);
+        vector[i] = ((float)rand()) / ((float)RAND_MAX) - 0.5;
     }
 }
 
@@ -695,7 +695,7 @@ float **laa_allocRandMatrix(int rows, int columns)
         }
         for (j = 0; j < columns; j++)
         {
-            matrixEntries[i][j] = ((float)rand() / (float)(RAND_MAX));
+            matrixEntries[i][j] = ((float)rand() / (float)(RAND_MAX))-0.5;
         }
     }
     return matrixEntries;
@@ -797,7 +797,7 @@ void laa_setMatrixToRand(float **matrix, int rows, int columns)
     {
         for (j = 0; j < columns; j++)
         {
-            matrix[i][j] = ((float)rand() / (float)(RAND_MAX));
+            matrix[i][j] = ((float)rand() / (float)(RAND_MAX)) - 0.5;
         }
     }
 }
