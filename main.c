@@ -10,7 +10,7 @@
 #define NUM_TRAINING_EXAMPLES 120     // number of data points used for training
 #define NUM_TESTING_EXAMPLES 30       // number of data points used for testing
 
-#define MINI_BATCHES 12
+#define MINI_BATCHES 8 //this should be a multiple of your maximum threads
 
 int main()
 {
@@ -27,7 +27,7 @@ int main()
     QueryPerformanceFrequency(&tps);
     QueryPerformanceCounter(&t1);
 
-    nnet_backprop_parallel(nnet, training_set, ITERATIONS, LEARN_RATE);
+    nnet_backprop_parallel(nnet, training_set, MINI_BATCHES, ITERATIONS, LEARN_RATE);
     
     QueryPerformanceCounter(&t2);
     timeDiff = (float)(t2.QuadPart - t1.QuadPart) / tps.QuadPart;

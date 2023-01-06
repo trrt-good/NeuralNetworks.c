@@ -95,7 +95,7 @@ int read_iris_data(char* fileName, char* delimiter, int bufferSize, int totalDat
     fclose(filePointer);
 }
 
-int read_iris_data(char* fileName, char* delimiter, int bufferSize, int totalDataPoints, int numTesting, int numInputs, int numOutputs, float **trainingInputArr, float **trainingOutputsArr, float **testingInputArr, float **testingOutputArr, int randomizeOrder)
+int read_mnist_number_data(char* fileName, char* delimiter, int bufferSize, int totalDataPoints, int numTesting, int numInputs, int numOutputs, float **trainingInputArr, float **trainingOutputsArr, float **testingInputArr, float **testingOutputArr, int randomizeOrder)
 {
     srand(time(NULL));
     float** allInputs = laa_allocMatrix(totalDataPoints, numInputs, 0);

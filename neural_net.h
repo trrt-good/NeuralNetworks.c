@@ -72,7 +72,7 @@ void nnet_reset_network(NeuralNet* nnet);
 void nnet_load_data(TrainingSet* training_set, TestingSet* testing_set, char* fileName, char* delimiter, int bufferSize);
 float* nnet_run_data(float inputs[INPUT_LAYER_SIZE], NeuralNet* nnet, float* activations[LAYERS]);
 int nnet_backprop(NeuralNet* nnet, TrainingSet* training_set, int num_mini_batches, int iterations, float learn_rate);
-int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int iterations, float learn_rate);
+int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int num_batches, int iterations, float learn_rate);
 int nnet_iterate_gradients(NeuralNet *nnet, float* activations[LAYERS], float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float** weight_product, float* weight_product_buffer, float *training_input, float *training_output);
 void nnet_subtract_gradients(NeuralNet *nnet, float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float learn_rate, int num_training_examples);
 float nnet_total_cost(NeuralNet* nnet, TrainingSet* set);

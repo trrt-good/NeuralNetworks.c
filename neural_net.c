@@ -88,7 +88,7 @@ void nnet_reset_network(NeuralNet *nnet)
 
 void nnet_load_data(TrainingSet *training_set, TestingSet *testing_set, char *fileName, char *delimiter, int bufferSize)
 {
-    readRowData_ML(fileName, delimiter, bufferSize, training_set->num_examples + testing_set->num_examples, testing_set->num_examples, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE, training_set->inputs, training_set->outputs, testing_set->inputs, testing_set->outputs, 1);
+    read_iris_data(fileName, delimiter, bufferSize, training_set->num_examples + testing_set->num_examples, testing_set->num_examples, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE, training_set->inputs, training_set->outputs, testing_set->inputs, testing_set->outputs, 1);
     //     laa_printMatrix(training_set->inputs, training_set->num_examples, npl[0]);
     //     laa_printMatrix(training_set->outputs, training_set->num_examples, npl[LAYERS]);
     //     laa_printMatrix(testing_set->inputs, testing_set->num_examples, npl[0]);
@@ -229,20 +229,20 @@ int nnet_backprop(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batch
     return 1;
 }
 
-int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int iterations, float learn_rate)
+int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int num_batches, int iterations, float learn_rate)
 {
-    const int examples_per_batch = training_set->num_examples / MAX_THREADS;
+    const int examples_per_batch = training_set->num_examples / num_batches;
     int iteration;
     int layer;
-    int batch;
+    int thread;
     int i, j;
     int largest_layer_size;
-    float** weight_gradients[MAX_THREADS][LAYERS];
-    float* bias_gradients[MAX_THREADS][LAYERS];
-    float* activations[MAX_THREADS][LAYERS];
-    float** weight_product[MAX_THREADS];
-    float* weight_product_buffer[MAX_THREADS];
-    for (i = 0; i < MAX_THREADS; i ++)
+    float** weight_gradients[num_batches][LAYERS];
+    float* bias_gradients[num_batches][LAYERS];
+    float* activations[num_batches][LAYERS];
+    float** weight_product[num_batches];
+    float* weight_product_buffer[num_batches];
+    for (i = 0; i < num_batches; i ++)
     {
         for (j = 0; j < LAYERS; j++)
         {
@@ -261,20 +261,20 @@ int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int itera
     for (iteration = iterations; iteration--;)
     {
         #pragma omp parallel for
-        for (batch = 0; batch < MAX_THREADS; batch++)
+        for (thread = 0; thread < num_batches; thread++)
         {
-            for (int nthExample = omp_get_thread_num() * examples_per_batch; nthExample < (omp_get_thread_num() + 1) * examples_per_batch; nthExample++)
+            for (int nthExample = thread * examples_per_batch; nthExample < (thread + 1) * examples_per_batch; nthExample++)
             {
-                nnet_iterate_gradients(nnet, activations[omp_get_thread_num()], weight_gradients[omp_get_thread_num()], bias_gradients[omp_get_thread_num()], weight_product[omp_get_thread_num()], weight_product_buffer[omp_get_thread_num()], training_set->inputs[nthExample], training_set->outputs[nthExample]);
+                nnet_iterate_gradients(nnet, activations[thread], weight_gradients[thread], bias_gradients[thread], weight_product[thread], weight_product_buffer[thread], training_set->inputs[nthExample], training_set->outputs[nthExample]);
             }
         }
         
-        for (i = 0; i < MAX_THREADS; i ++)
+        for (i = 0; i < num_batches; i ++)
         {
             nnet_subtract_gradients(nnet, weight_gradients[i], bias_gradients[i], learn_rate, training_set->num_examples);
         }
 
-        for (int nthExample = MAX_THREADS*examples_per_batch; nthExample < training_set->num_examples; nthExample++)
+        for (int nthExample = num_batches*examples_per_batch; nthExample < training_set->num_examples; nthExample++)
         {
             nnet_iterate_gradients(nnet, activations[0], weight_gradients[0], bias_gradients[0], weight_product[0], weight_product_buffer[0], training_set->inputs[nthExample], training_set->outputs[nthExample]);
         }
@@ -285,7 +285,7 @@ int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int itera
             return 0;
         }
     }
-    for (i = 0; i < MAX_THREADS; i ++)
+    for (i = 0; i < num_batches; i ++)
     {
         for (j = 0; j < LAYERS; j++)
         {
