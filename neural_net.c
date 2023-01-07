@@ -16,9 +16,9 @@ const int npl[LAYERS + 1] = {INPUT_LAYER_SIZE, HIDDEN_LAYER_SIZES, OUTPUT_LAYER_
 // function declairations
 void computeOneActivation(float **matrix, int rows, int columns, float *multVect, float *addVect, float *destination);
 void multiply_replace(float **a_matrixVals, int a_rows, int a_columns, float **b_matrixVals, int b_rows, int b_columns, float *buffer);
-void update_last_two_layer_gradients(NeuralNet *nnet, float* activations[LAYERS], float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float *expected_output);
+void update_last_two_layer_gradients(NeuralNet *nnet, float *activations[LAYERS], float **weight_gradients[LAYERS], float *bias_gradients[LAYERS], float *expected_output);
 
-NeuralNet *nnet_init()
+NeuralNet *nnet_init(float scale_factor)
 {
     NeuralNet *new_network = malloc(sizeof(NeuralNet));
     int i;
@@ -26,6 +26,8 @@ NeuralNet *nnet_init()
     {
         new_network->weights[i] = laa_allocRandMatrix(npl[i + 1], npl[i]);
         new_network->biases[i] = laa_allocRandVector(npl[i + 1]);
+        laa_multiplyMSTo(new_network->weights[i], npl[i + 1], npl[i], scale_factor, new_network->weights[i]);
+        laa_multiplyVSTo(new_network->biases[i], npl[i + 1], scale_factor, new_network->biases[i]);
     }
     return new_network;
 }
@@ -86,20 +88,69 @@ void nnet_reset_network(NeuralNet *nnet)
     }
 }
 
-void nnet_load_data(TrainingSet *training_set, TestingSet *testing_set, char *fileName, char *delimiter, int bufferSize)
+void nnet_load_data(TrainingSet *training_set, TestingSet *testing_set)
 {
-    read_iris_data(fileName, delimiter, bufferSize, training_set->num_examples + testing_set->num_examples, testing_set->num_examples, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE, training_set->inputs, training_set->outputs, testing_set->inputs, testing_set->outputs, 1);
-    //     laa_printMatrix(training_set->inputs, training_set->num_examples, npl[0]);
-    //     laa_printMatrix(training_set->outputs, training_set->num_examples, npl[LAYERS]);
-    //     laa_printMatrix(testing_set->inputs, testing_set->num_examples, npl[0]);
-    //     laa_printMatrix(testing_set->outputs, testing_set->num_examples, npl[LAYERS]);
+    printf("loading data... ");
+    //read_iris_data("Data/iris.txt", ",", 64, training_set->num_examples + testing_set->num_examples, testing_set->num_examples, INPUT_LAYER_SIZE, OUTPUT_LAYER_SIZE, training_set->inputs, training_set->outputs, testing_set->inputs, testing_set->outputs, 1);
+    read_mnist_number_data("../mnist/mnist_train.csv", training_set->num_examples, training_set->inputs, training_set->outputs);
+    read_mnist_number_data("../mnist/mnist_test.csv", testing_set->num_examples, testing_set->inputs, testing_set->outputs);
+        // laa_printMatrix(training_set->inputs, training_set->num_examples, npl[0]);
+        // laa_printMatrix(training_set->outputs, training_set->num_examples, npl[LAYERS]);
+        // laa_printMatrix(testing_set->inputs, testing_set->num_examples, npl[0]);
+        // laa_printMatrix(testing_set->outputs, testing_set->num_examples, npl[LAYERS]);
+    printf("done\n");
 }
 
-float *nnet_run_data(float inputs[npl[0]], NeuralNet *nnet, float* activations[LAYERS])
+void nnet_shuffle_data(float **inputs, float **outputs, int n)
+{
+    srand(time(NULL));
+    for (int i = n - 1; i > 0; i--)
+    {
+        int j = rand() % (i + 1);
+        float *tmp1 = inputs[i];
+        inputs[i] = inputs[j];
+        inputs[j] = tmp1;
+        float *tmp2 = outputs[i];
+        outputs[i] = outputs[j];
+        outputs[j] = tmp2;
+    }
+}
+
+float cost(float* outputs, float* expected)
+{
+    float sum;
+    for (int i = 0; i < npl[LAYERS]; i ++)
+    {
+        sum += (outputs[i] - expected[i])*(outputs[i] - expected[i]);
+    }
+    return sum;
+}
+
+float nnet_total_cost(NeuralNet* nnet, float** inputs, float** outputs, int n)
+{
+    float *activations[LAYERS];
+    float sum = 0;
+    for (int i = 0; i < LAYERS; i++)
+    {
+        activations[i] = laa_allocVector(npl[i + 1], 0);
+    }
+    for (int i = 0; i < n; i ++)
+    {
+        sum += cost(nnet_run_data(inputs[i], nnet, activations), outputs[i])/n;
+    }
+    laa_printVector(activations[LAYERS-1], npl[LAYERS]);
+    for (int i = 0; i < LAYERS; i++)
+    {
+        laa_freeVector(activations[i]);
+    }
+    return sum;
+}
+
+float *nnet_run_data(float inputs[npl[0]], NeuralNet *nnet, float *activations[LAYERS])
 {
     computeOneActivation(nnet->weights[0], npl[1], npl[0], inputs, nnet->biases[0], activations[0]);
     int i;
-    //#pragma omp parallel for 
+    // #pragma omp parallel for
     for (i = 1; i < LAYERS; i++)
     {
         computeOneActivation(nnet->weights[i], npl[i + 1], npl[i], activations[i - 1], nnet->biases[i], activations[i]);
@@ -107,7 +158,7 @@ float *nnet_run_data(float inputs[npl[0]], NeuralNet *nnet, float* activations[L
     return activations[LAYERS - 1];
 }
 
-int nnet_iterate_gradients(NeuralNet *nnet, float* activations[LAYERS], float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float** weight_product, float* weight_product_buffer, float *training_input, float *training_output)
+int nnet_iterate_gradients(NeuralNet *nnet, float *activations[LAYERS], float **weight_gradients[LAYERS], float *bias_gradients[LAYERS], float **weight_product, float *weight_product_buffer, float *training_input, float *training_output)
 {
     int layer;
     int i, j, k, l;
@@ -155,7 +206,7 @@ int nnet_iterate_gradients(NeuralNet *nnet, float* activations[LAYERS], float** 
             {
                 dotSum1 += weight_product[k][i] * training_input[j] * (activations[LAYERS - 1][k] - training_output[k]);
             }
-            weight_gradients[layer - 1][i][j] += dotSum1;   
+            weight_gradients[layer - 1][i][j] += dotSum1;
         }
 
         dotSum2 = 0;
@@ -169,6 +220,7 @@ int nnet_iterate_gradients(NeuralNet *nnet, float* activations[LAYERS], float** 
 
 int nnet_backprop(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batches, int iterations, float learn_rate)
 {
+    printf("initializing backprop... ");
     const int examples_per_batch = num_mini_batches ? training_set->num_examples / num_mini_batches : 0;
     int iteration;
     int nthExample;
@@ -176,12 +228,12 @@ int nnet_backprop(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batch
     int batch;
     int i;
     int largest_layer_size;
-    float** weight_gradients[LAYERS];
-    float* bias_gradients[LAYERS];
-    float* activations[LAYERS];
-    float** weight_product;
-    float* weight_product_buffer;
-    
+    float **weight_gradients[LAYERS];
+    float *bias_gradients[LAYERS];
+    float *activations[LAYERS];
+    float **weight_product;
+    float *weight_product_buffer;
+
     for (i = 0; i < LAYERS; i++)
     {
         if (npl[i] > largest_layer_size)
@@ -195,9 +247,11 @@ int nnet_backprop(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batch
         largest_layer_size = npl[i];
     weight_product = laa_allocMatrixRaw(largest_layer_size, largest_layer_size);
     weight_product_buffer = laa_allocVectorRaw(largest_layer_size);
+    printf("done\n");
 
     for (iteration = iterations; iteration--;)
     {
+        printf("\rtraining... %d/%d cost: %f", iterations-iteration, iterations, nnet_total_cost(nnet, training_set->inputs, training_set->outputs, training_set->num_examples));
         for (batch = 0; batch < num_mini_batches; batch++)
         {
             for (nthExample = batch * examples_per_batch; nthExample < (batch + 1) * examples_per_batch; nthExample++)
@@ -214,13 +268,15 @@ int nnet_backprop(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batch
 
         if (isnan(activations[0][0]))
         {
+            printf("oh no!");
             return 0;
         }
     }
+    printf("done\n");
 
     for (i = 0; i < LAYERS; i++)
     {
-        laa_freeMatrix(weight_gradients[i], npl[i+1]);
+        laa_freeMatrix(weight_gradients[i], npl[i + 1]);
         laa_freeVector(bias_gradients[i]);
         laa_freeVector(activations[i]);
     }
@@ -229,67 +285,80 @@ int nnet_backprop(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batch
     return 1;
 }
 
-int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int num_batches, int iterations, float learn_rate)
+int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int parallel_batches, int iterations, float learn_rate)
 {
-    const int examples_per_batch = training_set->num_examples / num_batches;
+    printf("initializing backprop... ");
+    const int examples_per_thread = training_set->num_examples / MAX_THREADS / parallel_batches ;
     int iteration;
     int layer;
     int thread;
+    int batch;
     int i, j;
-    int largest_layer_size;
-    float** weight_gradients[num_batches][LAYERS];
-    float* bias_gradients[num_batches][LAYERS];
-    float* activations[num_batches][LAYERS];
-    float** weight_product[num_batches];
-    float* weight_product_buffer[num_batches];
-    for (i = 0; i < num_batches; i ++)
+    int largest_layer_size = 0;
+    float **weight_gradients[MAX_THREADS][LAYERS];
+    float *bias_gradients[MAX_THREADS][LAYERS];
+    float *activations[MAX_THREADS][LAYERS];
+    float **weight_product[MAX_THREADS];
+    float *weight_product_buffer[MAX_THREADS];
+    for (i = 0; i <= LAYERS; i++)
+        if (npl[i] > largest_layer_size)
+            largest_layer_size = npl[i];
+
+    for (i = 0; i < MAX_THREADS; i++)
     {
         for (j = 0; j < LAYERS; j++)
         {
-            if (npl[j] > largest_layer_size)
-                largest_layer_size = npl[j];
             weight_gradients[i][j] = laa_allocMatrix(npl[j + 1], npl[j], 0);
             bias_gradients[i][j] = laa_allocVector(npl[j + 1], 0);
             activations[i][j] = laa_allocVector(npl[j + 1], 0);
         }
-        if (npl[j] > largest_layer_size)
-            largest_layer_size = npl[j];
         weight_product[i] = laa_allocMatrixRaw(largest_layer_size, largest_layer_size);
         weight_product_buffer[i] = laa_allocVectorRaw(largest_layer_size);
     }
+    printf("done\n");
 
     for (iteration = iterations; iteration--;)
     {
-        #pragma omp parallel for
-        for (thread = 0; thread < num_batches; thread++)
+        printf("\r%d/%d", iterations-iteration, iterations);
+        //printf("\rtraining... %d/%d cost: %f", iterations-iteration, iterations, nnet_total_cost(nnet, training_set->inputs, training_set->outputs, training_set->num_examples));
+        for (batch = 0; batch < parallel_batches; batch ++)
         {
-            for (int nthExample = thread * examples_per_batch; nthExample < (thread + 1) * examples_per_batch; nthExample++)
+            #pragma omp parallel for
+            for (thread = 0; thread < MAX_THREADS; thread++)
             {
-                nnet_iterate_gradients(nnet, activations[thread], weight_gradients[thread], bias_gradients[thread], weight_product[thread], weight_product_buffer[thread], training_set->inputs[nthExample], training_set->outputs[nthExample]);
+                for (int nthExample = (batch * MAX_THREADS + thread) * examples_per_thread; nthExample < (batch * MAX_THREADS + thread + 1) * examples_per_thread; nthExample++)
+                {
+                    nnet_iterate_gradients(nnet, activations[thread], weight_gradients[thread], bias_gradients[thread], weight_product[thread], weight_product_buffer[thread], training_set->inputs[nthExample], training_set->outputs[nthExample]);
+                }
+            }
+
+            for (i = 0; i < MAX_THREADS; i++)
+            {
+                nnet_subtract_gradients(nnet, weight_gradients[i], bias_gradients[i], learn_rate, training_set->num_examples);
             }
         }
-        
-        for (i = 0; i < num_batches; i ++)
-        {
-            nnet_subtract_gradients(nnet, weight_gradients[i], bias_gradients[i], learn_rate, training_set->num_examples);
-        }
 
-        for (int nthExample = num_batches*examples_per_batch; nthExample < training_set->num_examples; nthExample++)
+        for (int nthExample = parallel_batches * MAX_THREADS * examples_per_thread; nthExample < training_set->num_examples; nthExample++)
         {
             nnet_iterate_gradients(nnet, activations[0], weight_gradients[0], bias_gradients[0], weight_product[0], weight_product_buffer[0], training_set->inputs[nthExample], training_set->outputs[nthExample]);
         }
         nnet_subtract_gradients(nnet, weight_gradients[0], bias_gradients[0], learn_rate, training_set->num_examples);
 
-        if (isnan(activations[0][0][0]))
+        if (isnan(activations[LAYERS-1][0][0]))
         {
+            printf("oh no!");
             return 0;
         }
     }
-    for (i = 0; i < num_batches; i ++)
+    printf("done\n");
+
+
+
+    for (i = 0; i < MAX_THREADS; i++)
     {
         for (j = 0; j < LAYERS; j++)
         {
-            laa_freeMatrix(weight_gradients[i][j], npl[j+1]);
+            laa_freeMatrix(weight_gradients[i][j], npl[j + 1]);
             laa_freeVector(bias_gradients[i][j]);
             laa_freeVector(activations[i][j]);
         }
@@ -299,7 +368,7 @@ int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int num_b
     return 1;
 }
 
-void update_last_two_layer_gradients(NeuralNet *nnet, float* activations[LAYERS], float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float *expected_output)
+void update_last_two_layer_gradients(NeuralNet *nnet, float *activations[LAYERS], float **weight_gradients[LAYERS], float *bias_gradients[LAYERS], float *expected_output)
 {
     int i, j, k;
     float diff, sum;
@@ -320,16 +389,19 @@ void update_last_two_layer_gradients(NeuralNet *nnet, float* activations[LAYERS]
     }
 }
 
-void nnet_subtract_gradients(NeuralNet *nnet, float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float learn_rate, int num_training_examples)
+void nnet_subtract_gradients(NeuralNet *nnet, float **weight_gradients[LAYERS], float *bias_gradients[LAYERS], float learn_rate, int num_training_examples)
 {
     //(RELU(activations[layer][i]))
     int layer, i, j;
     for (layer = 0; layer < LAYERS; layer++)
     {
+        // laa_printVector(bias_gradients[layer], npl[layer+1]);
+        // laa_printMatrix(weight_gradients[layer], npl[layer+1], npl[layer]);
         for (i = 0; i < npl[layer + 1]; i++)
         {
             for (j = 0; j < npl[layer]; j++)
             {
+                
                 nnet->weights[layer][i][j] -= weight_gradients[layer][i][j] * learn_rate / num_training_examples;
                 weight_gradients[layer][i][j] = 0;
             }
@@ -341,7 +413,7 @@ void nnet_subtract_gradients(NeuralNet *nnet, float** weight_gradients[LAYERS], 
 
 float nnet_test_results(NeuralNet *nnet, TestingSet *test_set, int print_each_test, int print_results)
 {
-    float* activations[LAYERS];
+    float *activations[LAYERS];
     int i = 0, numWrong = 0;
     for (i = 0; i < LAYERS; i++)
     {

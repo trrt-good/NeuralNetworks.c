@@ -651,7 +651,11 @@ float **laa_allocMatrixRaw(int rows, int columns)
 
     float **matrixEntries = (float **)malloc(rows * sizeof(float *));
     if (!matrixEntries)
+    {
+        printf("allocation error! 1");
         exit(1);
+    }
+        
 
     for (i = 0; i < rows; i++)
     {
@@ -661,6 +665,7 @@ float **laa_allocMatrixRaw(int rows, int columns)
             for (; i > 0; i--)
                 free(matrixEntries[i - 1]);
             free(matrixEntries);
+            printf("allocation error! 2");
             exit(1);
         }
     }

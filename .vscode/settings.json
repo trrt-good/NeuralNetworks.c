@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdio.h": "c",
-        "linearalg.h": "c"
+        "linearalg.h": "c",
+        "datareader.h": "c"
     }
 }
