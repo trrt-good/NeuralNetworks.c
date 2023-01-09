@@ -37,8 +37,8 @@ TestingSet *nnet_testing_set_init(int num_testing_examples)
     TestingSet *new_set = malloc(sizeof(TestingSet));
     new_set->num_examples = num_testing_examples;
     int i;
-    new_set->inputs = laa_allocMatrixRaw(num_testing_examples, INPUT_LAYER_SIZE);
-    new_set->outputs = laa_allocMatrixRaw(num_testing_examples, OUTPUT_LAYER_SIZE);
+    new_set->inputs = laa_allocMatrix(num_testing_examples, INPUT_LAYER_SIZE, 0);
+    new_set->outputs = laa_allocMatrix(num_testing_examples, OUTPUT_LAYER_SIZE, 0);
     return new_set;
 }
 
@@ -47,8 +47,8 @@ TrainingSet *nnet_training_set_init(int num_training_examples)
     TrainingSet *new_set = malloc(sizeof(TrainingSet));
     new_set->num_examples = num_training_examples;
     int i;
-    new_set->inputs = laa_allocMatrixRaw(num_training_examples, INPUT_LAYER_SIZE);
-    new_set->outputs = laa_allocMatrixRaw(num_training_examples, OUTPUT_LAYER_SIZE);
+    new_set->inputs = laa_allocMatrix(num_training_examples, INPUT_LAYER_SIZE, 0);
+    new_set->outputs = laa_allocMatrix(num_training_examples, OUTPUT_LAYER_SIZE, 0);
     return new_set;
 }
 

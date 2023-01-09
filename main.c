@@ -4,13 +4,13 @@
 //#include <omp.h>
 #include <time.h>
 
-#define LEARN_RATE 0.03
-#define ITERATIONS 1000
+#define LEARN_RATE 0.001
+#define ITERATIONS 10
 
 #define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training
 #define NUM_TESTING_EXAMPLES 10000       // number of data points used for testing
 
-#define MINI_BATCHES 10
+#define MINI_BATCHES 128
 
 int main()
 {

@@ -101,6 +101,7 @@ int read_mnist_number_data(char *filename, int dataPoints, float **inputs, float
     }
     char line[4096];
     fgets(line, 4096, fp); // skip the first line
+    fgets(line, 4096, fp); // skip the first line
 
     int i = 0;
     while (fgets(line, 4096, fp) && i < dataPoints)
