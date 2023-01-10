@@ -4,18 +4,17 @@
 //#include <omp.h>
 #include <time.h>
 
-#define LEARN_RATE 0.001
-#define ITERATIONS 10
+#define LEARN_RATE 5
+#define ITERATIONS 100
 
 #define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training
 #define NUM_TESTING_EXAMPLES 10000       // number of data points used for testing
 
 #define MINI_BATCHES 128
-
 int main()
 {
     srand(time(NULL));
-    NeuralNet* nnet = nnet_init(0.5);
+    NeuralNet* nnet = nnet_init(0.3);
 
     TrainingSet* training_set = nnet_training_set_init(NUM_TRAINING_EXAMPLES);
     TestingSet* test_set = nnet_testing_set_init(NUM_TESTING_EXAMPLES);

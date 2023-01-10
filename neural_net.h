@@ -25,8 +25,8 @@ This header file contains declarations for a neural network implemented in C.
 // LAYERS does not include the input layer
 #define LAYERS 3
 #define INPUT_LAYER_SIZE 784
-#define HIDDEN_LAYER_SIZES 256
-#define OUTPUT_LAYER_SIZE 16
+#define HIDDEN_LAYER_SIZES 256, 16
+#define OUTPUT_LAYER_SIZE 10
 #define MAX_THREADS 8
 
 /*
