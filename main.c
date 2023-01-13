@@ -6,7 +6,7 @@
 
 #define LEARN_RATE 5
 #define ITERATIONS 100
-
+ 
 #define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training
 #define NUM_TESTING_EXAMPLES 10000       // number of data points used for testing
 
