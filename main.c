@@ -10,7 +10,7 @@
 #define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training
 #define NUM_TESTING_EXAMPLES 10000       // number of data points used for testing
 
-#define MINI_BATCHES 128
+#define MINI_BATCHES 128 
 int main()
 {
     srand(time(NULL));
