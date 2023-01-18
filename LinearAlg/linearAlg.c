@@ -32,9 +32,9 @@ Vector *la_initZerosVector(int rows)
     return la_initVector(rows, 0);
 }
 
-Vector *la_initRandVector(int rows)
+Vector *la_initRandVector(int rows, float from, float to)
 {
-    return la_initVectorArray(laa_allocRandVector(rows), rows);
+    return la_initVectorArray(laa_allocRandVector(rows, from, to), rows);
 }
 
 void la_freeVector(Vector *vector)
@@ -131,14 +131,14 @@ Matrix *la_initZerosMatrix(int rows, int columns)
     return newMatrix;
 }
 
-Matrix *la_initRandMatrix(int rows, int columns)
+Matrix *la_initRandMatrix(int rows, int columns, float from, float to)
 {
     int i, j;
     Matrix *newMatrix = (Matrix *)malloc(sizeof(Matrix));
     newMatrix->rows = rows;
     newMatrix->columns = columns;
 
-    newMatrix->entries = laa_allocRandMatrix(rows, columns);
+    newMatrix->entries = laa_allocRandMatrix(rows, columns, from, to);
     return newMatrix;
 }
 
@@ -348,7 +348,7 @@ float *laa_allocVectorRaw(int rows)
  * @param rows length of the vector
  * @return float* pointer to the vector in memory
  */
-float *laa_allocRandVector(int rows)
+float *laa_allocRandVector(int rows, float from, float to)
 {
     int i;
     float *vector = (float *)malloc(rows * sizeof(float));
@@ -356,7 +356,7 @@ float *laa_allocRandVector(int rows)
         exit(1);
     for (i = 0; i < rows; i++)
     {
-        vector[i] = ((float)rand() / (float)(RAND_MAX))-0.5;
+        vector[i] = ((float)rand() / (float)(RAND_MAX))*(to-from)+from;
     }
     return vector;
 }
@@ -680,7 +680,7 @@ float **laa_allocMatrixRaw(int rows, int columns)
  * @param columns columns of the matrix
  * @return float** pointer to the matrix in memory
  */
-float **laa_allocRandMatrix(int rows, int columns)
+float **laa_allocRandMatrix(int rows, int columns, float from, float to)
 {
     int i, j;
 
@@ -700,7 +700,7 @@ float **laa_allocRandMatrix(int rows, int columns)
         }
         for (j = 0; j < columns; j++)
         {
-            matrixEntries[i][j] = ((float)rand() / (float)(RAND_MAX))-0.5;
+            matrixEntries[i][j] = ((float)rand() / (float)(RAND_MAX))*(to-from)+from;
         }
     }
     return matrixEntries;

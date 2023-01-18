@@ -23,11 +23,27 @@ This header file contains declarations for a neural network implemented in C.
 #include "DataReader\\dataReader.h"
 
 // LAYERS does not include the input layer
-#define LAYERS 3
+#define LAYERS 4
+
+// handwriten numbers:
 #define INPUT_LAYER_SIZE 784
-#define HIDDEN_LAYER_SIZES 256, 16
+#define HIDDEN_LAYER_SIZES 50, 20, 20
 #define OUTPUT_LAYER_SIZE 10
+
+// iris:
+// #define INPUT_LAYER_SIZE 4
+// #define HIDDEN_LAYER_SIZES 5, 5
+// #define OUTPUT_LAYER_SIZE 3
+
+
 #define MAX_THREADS 8
+
+/*  really the derivative of the activation
+ *  relu : (a > 0)
+ *  sigmoid : (sigmoid(a) * (1 - sigmoid(a)))
+ *  none: (1)
+ */
+#define ACTIVATION_FUNCTION(a) (1)
 
 /*
 The neural_network struct represents a neural network with multiple layers.
@@ -63,7 +79,7 @@ typedef struct testing_set
 } TestingSet;
 
 void nnet_print(NeuralNet* nnet);
-NeuralNet* nnet_init(float scale_factor);
+NeuralNet* nnet_init(float init_min, float init_max);
 TestingSet* nnet_testing_set_init(int num_testing_examples);
 TrainingSet* nnet_training_set_init(int num_training_examples);
 void nnet_free(NeuralNet *nnet);
