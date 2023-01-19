@@ -10,10 +10,10 @@
 #define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training
 #define NUM_TESTING_EXAMPLES 10000       // number of data points used for testing
  
-#define MINI_BATCHES 1
+#define MINI_BATCHES 128
 
-#define INIT_MIN -0.1
-#define INIT_MAX 0.1
+#define INIT_MIN -0.05
+#define INIT_MAX 0.05
 
 int main()
 {
@@ -39,8 +39,7 @@ int main()
 
     float results = nnet_test_results(nnet, test_set, 0, 1);
         
-
-    //nnet_save_to_file(nnet, "bin/testNet.nnet");
+    nnet_save_to_file(nnet, "bin/testNet.nnet");
 
     // nnet_load_from_file(nnet, "bin/testNet.nnet");
     // nnet_test_results(nnet, test_set, 0, 1);

@@ -27,7 +27,7 @@ This header file contains declarations for a neural network implemented in C.
 
 // handwriten numbers:
 #define INPUT_LAYER_SIZE 784
-#define HIDDEN_LAYER_SIZES 50, 20, 20
+#define HIDDEN_LAYER_SIZES 256, 32, 16
 #define OUTPUT_LAYER_SIZE 10
 
 // iris:
@@ -38,12 +38,19 @@ This header file contains declarations for a neural network implemented in C.
 
 #define MAX_THREADS 8
 
-/*  really the derivative of the activation
+/*  the derivative of the activation
  *  relu : (a > 0)
  *  sigmoid : (sigmoid(a) * (1 - sigmoid(a)))
  *  none: (1)
  */
-#define ACTIVATION_FUNCTION(a) (1)
+#define ACTIVATION_FUNCTION_DERIV(a) (a > 0)
+
+/*  activation function
+ *  relu : (a*(a>0))
+ *  sigmoid : (sigmoid(a))
+ *  none: (a)
+ */
+#define ACTIVATION_FUNCTION(a) (a*(a>0))
 
 /*
 The neural_network struct represents a neural network with multiple layers.
