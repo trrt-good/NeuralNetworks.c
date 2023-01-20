@@ -321,7 +321,7 @@ int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int paral
     for (iteration = iterations; iteration--;)
     {
         //printf("\r%d/%d", iterations-iteration, iterations);
-        //printf("\rtraining... %d/%d cost: %f", iterations-iteration, iterations, nnet_total_cost(nnet, training_set->inputs, training_set->outputs, training_set->num_examples));
+        printf("\rtraining... %d/%d cost: %f", iterations-iteration, iterations, nnet_total_cost(nnet, training_set->inputs, training_set->outputs, training_set->num_examples));
         for (batch = 0; batch < parallel_batches; batch ++)
         {
             #pragma omp parallel for
