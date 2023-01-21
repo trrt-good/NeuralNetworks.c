@@ -4,7 +4,7 @@
 //#include <omp.h>
 #include <time.h>
 
-#define LEARN_RATE 0.0001
+#define LEARN_RATE 0.0002
 #define ITERATIONS 1
  
 #define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training

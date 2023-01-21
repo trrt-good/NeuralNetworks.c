@@ -27,7 +27,7 @@ This header file contains declarations for a neural network implemented in C.
 
 // handwriten numbers:
 #define INPUT_LAYER_SIZE 784
-#define HIDDEN_LAYER_SIZES 256, 32, 16
+#define HIDDEN_LAYER_SIZES 128, 32, 16
 #define OUTPUT_LAYER_SIZE 10
 
 // iris:
