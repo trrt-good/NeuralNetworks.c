@@ -17,7 +17,7 @@ void multiply_replace(float **a_matrixVals, int a_rows, int a_columns, float **b
 void update_last_two_layer_gradients(NeuralNet *nnet, float *activations[LAYERS], float **weight_gradients[LAYERS], float *bias_gradients[LAYERS], float *expected_output);
 
 float sigmoid(float n) {
-    return (1 / (1 + powf(2.71828183F, -n)));
+    return (1 / (1 + powf(2.71828183F, -n))); 
 }
 
 NeuralNet *nnet_init(float init_min, float init_max)
