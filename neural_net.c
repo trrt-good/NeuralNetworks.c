@@ -10,7 +10,7 @@
  * corresponding to it's index.
  */
 const int npl[LAYERS + 1] = {INPUT_LAYER_SIZE, HIDDEN_LAYER_SIZES, OUTPUT_LAYER_SIZE};
-
+ 
 // function declairations
 void computeOneActivation(float **matrix, int rows, int columns, float *multVect, float *addVect, float *destination);
 void multiply_replace(float **a_matrixVals, int a_rows, int a_columns, float **b_matrixVals, int b_rows, int b_columns, float *buffer);
