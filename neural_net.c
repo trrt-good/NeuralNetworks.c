@@ -199,7 +199,7 @@ int nnet_iterate_gradients(NeuralNet *nnet, float *activations[LAYERS], float **
     }
     multiply_replace(weight_product, npl[layer + 2], npl[layer + 1], nnet->weights[layer], npl[layer + 1], npl[layer], weight_product_buffer);
     for (i = 0; i < npl[layer]; i++)
-    {  
+    {   
         for (j = 0; j < npl[layer - 1]; j++)
         {
             dotSum1 = 0;
