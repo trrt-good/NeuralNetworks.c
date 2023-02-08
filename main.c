@@ -4,16 +4,16 @@
 //#include <omp.h>
 #include <time.h>
 
-#define LEARN_RATE 0.0002
-#define ITERATIONS 1
+#define LEARN_RATE 0.5
+#define ITERATIONS 100
  
-#define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training
-#define NUM_TESTING_EXAMPLES 10000       // number of data points used for testing
+#define NUM_TRAINING_EXAMPLES 120     // number of data points used for training
+#define NUM_TESTING_EXAMPLES 30       // number of data points used for testing
  
-#define MINI_BATCHES 128
+#define MINI_BATCHES 10
 
-#define INIT_MIN -0.04
-#define INIT_MAX 0.04
+#define INIT_MIN -0.5
+#define INIT_MAX 0.5
 
 int main()
 {
@@ -30,8 +30,8 @@ int main()
     QueryPerformanceFrequency(&tps);
     QueryPerformanceCounter(&t1);
 
-    //nnet_backprop(nnet, training_set, MINI_BATCHES, ITERATIONS, LEARN_RATE);
-    nnet_backprop_parallel(nnet, training_set, MINI_BATCHES, ITERATIONS, LEARN_RATE);
+    nnet_optimize(nnet, training_set, MINI_BATCHES, ITERATIONS, LEARN_RATE);
+    //nnet_optimize_parallel(nnet, training_set, MINI_BATCHES, ITERATIONS, LEARN_RATE);
     
     QueryPerformanceCounter(&t2);
     timeDiff = (float)(t2.QuadPart - t1.QuadPart) / tps.QuadPart;

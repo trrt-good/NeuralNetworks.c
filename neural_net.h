@@ -5,7 +5,7 @@ This header file contains declarations for a neural network implemented in C.
 - The TrainingSet and TestingSet structs contain the data for training and testing the network, including the number of examples and the inputs/outputs for each example.
 - Functions are provided for initializing and freeing the NeuralNet, TrainingSet, and TestingSet, as well as resetting the weights and biases in the NeuralNet.
 - There are also functions for loading data from a file and running the network on a given set of inputs.
-- The main training function is nnet_backprop, which performs backpropagation using mini-batches and a specified number of iterations.
+- The main training function is nnet_optimize, which performs backpropagation using mini-batches and a specified number of iterations.
 - There are also functions for iterating through the gradients for a single training example, subtracting the gradients from the weights and biases, and calculating the total cost for a set of training examples.
 - The nnet_test_results function can be used to test the accuracy of the network on a given TestingSet, with the option to print the results for each test.
 - Finally, there are functions for printing and saving/loading the network to/from a file.
@@ -23,12 +23,12 @@ This header file contains declarations for a neural network implemented in C.
 #include "DataReader\\dataReader.h"
 
 // LAYERS does not include the input layer
-#define LAYERS 4
+#define LAYERS 3
 
 // handwriten numbers:
-#define INPUT_LAYER_SIZE 784
-#define HIDDEN_LAYER_SIZES 128, 32, 16
-#define OUTPUT_LAYER_SIZE 10
+#define INPUT_LAYER_SIZE 4
+#define HIDDEN_LAYER_SIZES 5, 5
+#define OUTPUT_LAYER_SIZE 3
 
 // iris:
 // #define INPUT_LAYER_SIZE 4
@@ -97,8 +97,8 @@ void nnet_load_data(TrainingSet *training_set, TestingSet *testing_set);
 void nnet_shuffle_data(float **inputs, float **outputs, int n);
 float* nnet_run_data(float inputs[INPUT_LAYER_SIZE], NeuralNet* nnet, float* activations[LAYERS]);
 float nnet_total_cost(NeuralNet* nnet, float** inputs, float** outputs, int n);
-int nnet_backprop(NeuralNet* nnet, TrainingSet* training_set, int num_mini_batches, int iterations, float learn_rate);
-int nnet_backprop_parallel(NeuralNet *nnet, TrainingSet *training_set, int parallel_batches, int iterations, float learn_rate);
+int nnet_optimize(NeuralNet* nnet, TrainingSet* training_set, int num_mini_batches, int iterations, float learn_rate);
+int nnet_optimize_parallel(NeuralNet *nnet, TrainingSet *training_set, int parallel_batches, int iterations, float learn_rate);
 int nnet_iterate_gradients(NeuralNet *nnet, float* activations[LAYERS], float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float** weight_product, float* weight_product_buffer, float *training_input, float *training_output);
 void nnet_subtract_gradients(NeuralNet *nnet, float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float learn_rate, int num_training_examples);
 float nnet_test_results(NeuralNet* nnet, TestingSet* test_set, int print_each_test, int print_results);
