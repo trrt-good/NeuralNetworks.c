@@ -19,38 +19,17 @@ This header file contains declarations for a neural network implemented in C.
 #include <math.h>
 #include <omp.h>
 #include <time.h>
-#include "LinearAlg\\linearAlg.h"
-#include "DataReader\\dataReader.h"
+#include "linear_alg.h"
+#include "data_handler.h"
 
-// LAYERS does not include the input layer
+// LAYERS value does not count the input layer
 #define LAYERS 3
 
-// handwriten numbers:
 #define INPUT_LAYER_SIZE 4
 #define HIDDEN_LAYER_SIZES 5, 5
 #define OUTPUT_LAYER_SIZE 3
 
-// iris:
-// #define INPUT_LAYER_SIZE 4
-// #define HIDDEN_LAYER_SIZES 5, 5
-// #define OUTPUT_LAYER_SIZE 3
-
-
 #define MAX_THREADS 8
-
-/*  the derivative of the activation
- *  relu : (a > 0)
- *  sigmoid : (sigmoid(a) * (1 - sigmoid(a)))
- *  none: (1)
- */
-#define ACTIVATION_FUNCTION_DERIV(a) (a > 0)
-
-/*  activation function
- *  relu : (a*(a>0))
- *  sigmoid : (sigmoid(a))
- *  none: (a)
- */
-#define ACTIVATION_FUNCTION(a) (a*(a>0))
 
 /*
 The neural_network struct represents a neural network with multiple layers.
@@ -63,43 +42,16 @@ typedef struct neural_network
     float *biases[LAYERS];
 } NeuralNet;
 
-/*
-The training_set struct represents a set of data used for training a neural network.
-It has the number of examples in the set, as well as the inputs and corresponding outputs for each example.
-*/
-typedef struct training_set
-{
-    int num_examples;
-    float **inputs;
-    float **outputs;
-} TrainingSet;
-
-/*
-The testing_set struct represents a set of data used for testing a trained neural network.
-It has the number of examples in the set, as well as the inputs and corresponding outputs for each example.
-*/
-typedef struct testing_set
-{
-    int num_examples;
-    float **inputs;
-    float **outputs;
-} TestingSet;
-
 void nnet_print(NeuralNet* nnet);
 NeuralNet* nnet_init(float init_min, float init_max);
-TestingSet* nnet_testing_set_init(int num_testing_examples);
-TrainingSet* nnet_training_set_init(int num_training_examples);
+
 void nnet_free(NeuralNet *nnet);
-void nnet_free_test_set(TestingSet *set);
-void nnet_free_training_set(TrainingSet *set);
 void nnet_reset_network(NeuralNet* nnet);
 void nnet_load_data(TrainingSet *training_set, TestingSet *testing_set);
-void nnet_shuffle_data(float **inputs, float **outputs, int n);
-float* nnet_run_data(float inputs[INPUT_LAYER_SIZE], NeuralNet* nnet, float* activations[LAYERS]);
+float* nnet_feed_forward(float inputs[INPUT_LAYER_SIZE], NeuralNet* nnet, float* activations[LAYERS]);
 float nnet_total_cost(NeuralNet* nnet, float** inputs, float** outputs, int n);
 int nnet_optimize(NeuralNet* nnet, TrainingSet* training_set, int num_mini_batches, int iterations, float learn_rate);
 int nnet_optimize_parallel(NeuralNet *nnet, TrainingSet *training_set, int parallel_batches, int iterations, float learn_rate);
-int nnet_iterate_gradients(NeuralNet *nnet, float* activations[LAYERS], float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float** weight_product, float* weight_product_buffer, float *training_input, float *training_output);
 void nnet_subtract_gradients(NeuralNet *nnet, float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float learn_rate, int num_training_examples);
 float nnet_test_results(NeuralNet* nnet, TestingSet* test_set, int print_each_test, int print_results);
 void nnet_print(NeuralNet* nnet);

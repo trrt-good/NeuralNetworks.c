@@ -2,6 +2,11 @@
     "files.associations": {
         "stdio.h": "c",
         "linearalg.h": "c",
-        "datareader.h": "c"
+        "datareader.h": "c",
+        "profileapi.h": "c",
+        "neural_net.h": "c",
+        "time.h": "c",
+        "linear_alg.h": "c",
+        "data_handler.h": "c"
     }
 }

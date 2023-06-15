@@ -4,13 +4,13 @@
 //#include <omp.h>
 #include <time.h>
 
-#define LEARN_RATE 0.5
-#define ITERATIONS 100
+#define LEARN_RATE 0.05
+#define EPOCHS 100
  
 #define NUM_TRAINING_EXAMPLES 120     // number of data points used for training
 #define NUM_TESTING_EXAMPLES 30       // number of data points used for testing
  
-#define MINI_BATCHES 10
+#define BATCHES 10
 
 #define INIT_MIN -0.5
 #define INIT_MAX 0.5
@@ -20,8 +20,8 @@ int main()
     srand(time(NULL));
     NeuralNet* nnet = nnet_init(INIT_MIN, INIT_MAX);
 
-    TrainingSet* training_set = nnet_training_set_init(NUM_TRAINING_EXAMPLES);
-    TestingSet* test_set = nnet_testing_set_init(NUM_TESTING_EXAMPLES);
+    TrainingSet* training_set = dh_training_set_init(NUM_TRAINING_EXAMPLES);
+    TestingSet* test_set = dh_testing_set_init(NUM_TESTING_EXAMPLES);
     nnet_load_data(training_set, test_set);
     
     LARGE_INTEGER tps;
@@ -30,8 +30,7 @@ int main()
     QueryPerformanceFrequency(&tps);
     QueryPerformanceCounter(&t1);
 
-    nnet_optimize(nnet, training_set, MINI_BATCHES, ITERATIONS, LEARN_RATE);
-    //nnet_optimize_parallel(nnet, training_set, MINI_BATCHES, ITERATIONS, LEARN_RATE);
+    nnet_optimize(nnet, training_set, BATCHES, EPOCHS, LEARN_RATE);
     
     QueryPerformanceCounter(&t2);
     timeDiff = (float)(t2.QuadPart - t1.QuadPart) / tps.QuadPart;
