@@ -13,7 +13,10 @@
                 "main.c",
                 "-o",
                 "bin\\nnet.exe",
-                "-fopenmp"
+                "-fopenmp",
+                "-Wall",
+                "-Werror",
+                "-Wpedantic"
             ],
             "options": {
                 "cwd": "${fileDirname}"

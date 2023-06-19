@@ -37,6 +37,12 @@ void dh_free_training_set(TrainingSet *set);
 void dh_shuffle_data(float** data_inputs, float **data_outputs, int num_data_points);
 
 int dh_read_data_iris(char *fileName, TrainingSet* training_set, TestingSet* testing_set);
+
+int dh_read_mnist_digits_images(char *filename, int num_data_points, float **data);
+int dh_read_mnist_digits_labels(char *filename, int num_data_points, float **data);
+
+void dh_print_image(float* pixels, int image_width);
+
 int read_mnist_number_data(char *filename, int dataPoints, float **inputs, float **outputs);
 
 #endif

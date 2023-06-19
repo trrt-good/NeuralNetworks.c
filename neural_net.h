@@ -25,9 +25,14 @@ This header file contains declarations for a neural network implemented in C.
 // LAYERS value does not count the input layer
 #define LAYERS 3
 
-#define INPUT_LAYER_SIZE 4
-#define HIDDEN_LAYER_SIZES 5, 5
-#define OUTPUT_LAYER_SIZE 3
+// mnist configuration: 
+#define INPUT_LAYER_SIZE 784
+#define HIDDEN_LAYER_SIZES 30, 20
+#define OUTPUT_LAYER_SIZE 10
+
+// #define INPUT_LAYER_SIZE 4
+// #define HIDDEN_LAYER_SIZES 5, 5
+// #define OUTPUT_LAYER_SIZE 3
 
 #define MAX_THREADS 8
 
@@ -47,12 +52,10 @@ NeuralNet* nnet_init(float init_min, float init_max);
 
 void nnet_free(NeuralNet *nnet);
 void nnet_reset_network(NeuralNet* nnet);
-void nnet_load_data(TrainingSet *training_set, TestingSet *testing_set);
-float* nnet_feed_forward(float inputs[INPUT_LAYER_SIZE], NeuralNet* nnet, float* activations[LAYERS]);
+float* nnet_feed_forward(float *inputs, NeuralNet* nnet, float* activations[LAYERS]);
 float nnet_total_cost(NeuralNet* nnet, float** inputs, float** outputs, int n);
 int nnet_optimize(NeuralNet* nnet, TrainingSet* training_set, int num_mini_batches, int iterations, float learn_rate);
 int nnet_optimize_parallel(NeuralNet *nnet, TrainingSet *training_set, int parallel_batches, int iterations, float learn_rate);
-void nnet_subtract_gradients(NeuralNet *nnet, float** weight_gradients[LAYERS], float* bias_gradients[LAYERS], float learn_rate, int num_training_examples);
 float nnet_test_results(NeuralNet* nnet, TestingSet* test_set, int print_each_test, int print_results);
 void nnet_print(NeuralNet* nnet);
 int nnet_save_to_file(NeuralNet* nnet, const char* fileName);

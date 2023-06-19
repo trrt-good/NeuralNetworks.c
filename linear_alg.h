@@ -106,7 +106,6 @@ float **laa_allocMatrix(int rows, int columns, float initialValue);
 float **laa_allocMatrixRaw(int rows, int columns);
 float **laa_allocRandMatrix(int rows, int columns, float from, float to);
 float **laa_cloneMatrix(float **values, int rows, int columns);
-float** cloneMatrix2dArray(int rows, int columns, float values[rows][columns]);
 void laa_freeMatrix(float **matrix, int rows);
 void laa_setMatrixTo(float **matrix, int rows, int columns, float value);
 void laa_setMatrixToRand(float **matrix, int rows, int columns);

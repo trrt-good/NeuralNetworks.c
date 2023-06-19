@@ -122,7 +122,6 @@ Matrix *la_initMatrixArray(float **entries, int rows, int columns)
 
 Matrix *la_initZerosMatrix(int rows, int columns)
 {
-    int i, j;
     Matrix *newMatrix = (Matrix *)malloc(sizeof(Matrix));
     newMatrix->rows = rows;
     newMatrix->columns = columns;
@@ -133,7 +132,6 @@ Matrix *la_initZerosMatrix(int rows, int columns)
 
 Matrix *la_initRandMatrix(int rows, int columns, float from, float to)
 {
-    int i, j;
     Matrix *newMatrix = (Matrix *)malloc(sizeof(Matrix));
     newMatrix->rows = rows;
     newMatrix->columns = columns;
@@ -164,7 +162,7 @@ void la_freeMatrix(Matrix *matrix)
  */
 void la_addToMatrix(Matrix *a, Matrix *b)
 {
-    if (a->columns != b->columns | a->rows != b->rows)
+    if ((a->columns != b->columns) | (a->rows != b->rows))
     {
         printf("Matrices have incompatable dimensions! cannot add");
         exit(0);
@@ -180,7 +178,7 @@ void la_addToMatrix(Matrix *a, Matrix *b)
  */
 void la_subtractFromMatrix(Matrix *a, Matrix *b)
 {
-    if (a->columns != b->columns | a->rows != b->rows)
+    if ((a->columns != b->columns) | (a->rows != b->rows))
     {
         printf("Matrices have incompatable dimensions! cannot add");
         exit(0);
@@ -190,17 +188,17 @@ void la_subtractFromMatrix(Matrix *a, Matrix *b)
 
 Matrix *la_addMatrix(Matrix *a, Matrix *b)
 {
-    if (a->columns != b->columns | a->rows != b->rows)
+    if ((a->columns != b->columns) | (a->rows != b->rows))
     {
         printf("Matrices have incompatable dimensions! cannot add");
         exit(0);
     }
-    la_initMatrixArray(laa_addMatrix(a->entries, b->entries, a->rows, a->columns), a->rows, a->columns);
+    return la_initMatrixArray(laa_addMatrix(a->entries, b->entries, a->rows, a->columns), a->rows, a->columns);
 }
 
 void la_addMatrixTo(Matrix *a, Matrix *b, Matrix *destination)
 {
-    if (a->columns != b->columns | a->rows != b->rows)
+    if ((a->columns != b->columns) | (a->rows != b->rows))
     {
         printf("Matrices have incompatable dimensions! cannot add");
         exit(0);
@@ -210,17 +208,17 @@ void la_addMatrixTo(Matrix *a, Matrix *b, Matrix *destination)
 
 Matrix *la_subtractMatrix(Matrix *a, Matrix *b)
 {
-    if (a->columns != b->columns | a->rows != b->rows)
+    if ((a->columns != b->columns) | (a->rows != b->rows))
     {
         printf("Matrices have incompatable dimensions! cannot add");
         exit(0);
     }
-    la_initMatrixArray(laa_subtractMatrix(a->entries, b->entries, a->rows, a->columns), a->rows, a->columns);
+    return la_initMatrixArray(laa_subtractMatrix(a->entries, b->entries, a->rows, a->columns), a->rows, a->columns);
 }
 
 void la_subtractMatrixTo(Matrix *a, Matrix *b, Matrix *destination)
 {
-    if (a->columns != b->columns | a->rows != b->rows)
+    if ((a->columns != b->columns) | (a->rows != b->rows))
     {
         printf("Matrices have incompatable dimensions! cannot add");
         exit(0);
@@ -274,8 +272,6 @@ Matrix *la_getInverse(Matrix *matrix)
 //=====================================================================================================================================
 //=================================================== Linear algebra with arrays ======================================================
 //=====================================================================================================================================
-
-#pragma region laa - linear algebra with arrays
 
 //=============== vectors ===============
 
@@ -532,7 +528,7 @@ void laa_multiplyVSTo(float* vector, int rows, float multiplier, float* destinat
 float* laa_multiplyVS(float* vector, int rows, float multiplier)
 {
     int i;
-    float* new_vector = malloc(sizeof(float)*rows);
+    float* new_vector = (float *)malloc(sizeof(float)*rows);
     for (i = 0; i < rows; i ++)
     {
         new_vector[i] = vector[i]*multiplier;
@@ -552,7 +548,7 @@ float* laa_multiplyVS(float* vector, int rows, float multiplier)
 void laa_printMatrix(float **matrix, int rows, int columns)
 {
     int i, j;
-    if (rows <= 0 | columns <= 0)
+    if ((rows <= 0) | (columns <= 0))
     {
         printf("invalid matrix size! cannot print");
     }
@@ -647,7 +643,7 @@ float **laa_allocMatrix(int rows, int columns, float initialValue)
  */
 float **laa_allocMatrixRaw(int rows, int columns)
 {
-    int i, j;
+    int i;
 
     float **matrixEntries = (float **)malloc(rows * sizeof(float *));
     if (!matrixEntries)
@@ -718,32 +714,6 @@ float **laa_allocRandMatrix(int rows, int columns, float from, float to)
 float **laa_cloneMatrix(float **values, int rows, int columns)
 {
     int i, j;
-    float **matrixEntries = (float **)malloc(rows * sizeof(float *));
-    if (!matrixEntries)
-        exit(1);
-
-    for (i = 0; i < rows; i++)
-    {
-        matrixEntries[i] = (float *)malloc(columns * sizeof(float));
-        if (!matrixEntries[i])
-        {
-            for (; i > 0; i--)
-                free(matrixEntries[i - 1]);
-            free(matrixEntries);
-            exit(1);
-        }
-        for (j = 0; j < columns; j++)
-        {
-            matrixEntries[i][j] = values[i][j];
-        }
-    }
-    return matrixEntries;
-}
-
-float **cloneMatrix2dArray(int rows, int columns, float values[rows][columns])
-{
-    int i, j;
-
     float **matrixEntries = (float **)malloc(rows * sizeof(float *));
     if (!matrixEntries)
         exit(1);
@@ -1082,7 +1052,7 @@ void laa_multiplyMMTo(float **a_matrixVals, int a_rows, int a_columns, float **b
         printf("matrices must have compatable dimensions!\n");
         exit(0);
     }
-    else if (destination == a_matrixVals | destination == b_matrixVals)
+    else if ((destination == a_matrixVals) | (destination == b_matrixVals))
     {
         printf("destination cannot be equal to one of the multipliers! please use a different matrix to store the product result or use the laa_multiplyMMReplace method");
         exit(0);
@@ -1119,7 +1089,7 @@ void laa_multiplyMMReplace(float **a_matrixVals, int a_rows, int a_columns, floa
 {
     int i, j, k;
     float sum = 0;
-    float buffer[a_columns];
+    float *buffer = laa_allocVectorRaw(a_columns);
     if (a_columns != b_rows)
     {
         printf("matrices must have compatable dimensions!\n");
@@ -1326,5 +1296,3 @@ float **laa_getInverse(float **matrixEntries, int rows, int columns)
     }
     return newMatrix;
 }
-
-#pragma endregion

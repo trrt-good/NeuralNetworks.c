@@ -4,9 +4,8 @@
 
 TestingSet *dh_testing_set_init(int num_testing_examples)
 {
-    TestingSet *new_set = malloc(sizeof(TestingSet));
+    TestingSet *new_set = (TestingSet *)malloc(sizeof(TestingSet));
     new_set->num_examples = num_testing_examples;
-    int i;
     new_set->inputs = laa_allocMatrix(num_testing_examples, INPUT_LAYER_SIZE, 0);
     new_set->outputs = laa_allocMatrix(num_testing_examples, OUTPUT_LAYER_SIZE, 0);
     return new_set;
@@ -14,9 +13,8 @@ TestingSet *dh_testing_set_init(int num_testing_examples)
 
 TrainingSet *dh_training_set_init(int num_training_examples)
 {
-    TrainingSet *new_set = malloc(sizeof(TrainingSet));
+    TrainingSet *new_set = (TrainingSet *)malloc(sizeof(TrainingSet));
     new_set->num_examples = num_training_examples;
-    int i;
     new_set->inputs = laa_allocMatrix(num_training_examples, INPUT_LAYER_SIZE, 0);
     new_set->outputs = laa_allocMatrix(num_training_examples, OUTPUT_LAYER_SIZE, 0);
     return new_set;
@@ -138,36 +136,71 @@ int dh_read_data_iris(char *fileName, TrainingSet* training_set, TestingSet* tes
     return 1;
 }
 
-int read_mnist_number_data(char *filename, int dataPoints, float **inputs, float **outputs)
+void dh_print_image(float* pixels, int image_width)
 {
-    FILE *fp = fopen(filename, "r");
-    if (fp == NULL)
+    char shades[] = " .::#$&&%%%%%%";
+    int num_shades = sizeof(shades) - 1;
+
+    for (int i = 0; i < image_width; i++) 
     {
-        fprintf(stderr, "Error opening file\n");
-        exit(1);
-    }
-    char line[4096];
-    fgets(line, 4096, fp); // skip the first line
-    fgets(line, 4096, fp); // skip the first line
-
-    int i = 0;
-    while (fgets(line, 4096, fp) && i < dataPoints)
-    {
-        char *tmp = strdup(line);
-
-        // get the label
-        int label = atoi(strtok(tmp, ","));
-        outputs[i][label] = 1.0;
-
-        // get the inputs
-        for (int j = 0; j < 784; j++)
+        for (int j = 0; j < image_width; j++) 
         {
-            inputs[i][j] = atof(strtok(NULL, ","))/255.0;
-        }
+            float pixel = pixels[i*28 + j];
+            int shade_index = (int) (pixel * num_shades);
 
-        free(tmp);
-        i++;
+            // Print the shade twice
+            printf("%c%c", shades[shade_index], shades[shade_index]);
+        }
+        printf("\n");
+    }
+}
+
+// normalizes
+int dh_read_mnist_digits_images(char *filename, int num_data_points, float **data) 
+{
+    FILE *file = fopen(filename, "rb");
+    if (file == NULL) {
+        return 0; // File not found
     }
 
-    fclose(fp);
+    // Skip the header
+    fseek(file, 16, SEEK_SET);
+
+    // Read each data point
+    for (int i = 0; i < num_data_points; i++) {
+        for (int j = 0; j < 28*28; j++) {
+            unsigned char pixel;
+            fread(&pixel, sizeof(unsigned char), 1, file);
+
+            // Normalize to 0.0 - 1.0
+            data[i][j] = pixel / 255.0;
+        }
+    }
+
+    fclose(file);
+    return 1;
+}
+
+// data array is assumed to be pre allocated matrix with num_data_points rows and 10 columns, 
+// with all entries being zero. 
+int dh_read_mnist_digits_labels(char *filename, int num_data_points, float **data) {
+    FILE *file = fopen(filename, "rb");
+    if (file == NULL) {
+        return 0; // File not found
+    }
+
+    // Skip the header
+    fseek(file, 8, SEEK_SET);
+
+    // Read each label
+    for (int i = 0; i < num_data_points; i++) {
+        unsigned char label;
+        fread(&label, sizeof(unsigned char), 1, file);
+
+        // One-hot encode label
+        data[i][label] = 1.0;
+    }
+
+    fclose(file);
+    return 1;
 }
