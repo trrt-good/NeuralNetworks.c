@@ -5,7 +5,7 @@
 #include <time.h>
 
 // best mnist configuration (that I have tested):
-#define LEARN_RATE 0.05
+#define LEARN_RATE 0.01
 #define EPOCHS 10
  
 #define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training
@@ -55,7 +55,7 @@ int main()
     QueryPerformanceFrequency(&tps);
     QueryPerformanceCounter(&t1);
 
-    nnet_optimize_parallel(nnet, training_set, BATCHES, EPOCHS, LEARN_RATE);
+    nnet_optimize(nnet, training_set, BATCHES, EPOCHS, LEARN_RATE);
     
     QueryPerformanceCounter(&t2);
     timeDiff = (float)(t2.QuadPart - t1.QuadPart) / tps.QuadPart;

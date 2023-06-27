@@ -25,14 +25,10 @@ const int npl[LAYERS + 1] = {INPUT_LAYER_SIZE, HIDDEN_LAYER_SIZES, OUTPUT_LAYER_
 // function declairations
 void multiply_MtVreplace(float **matrixVals, int rows, int cols, float *vectorVals, float *buffer);
 
-void nnet_subtract_gradients(NeuralNet *nnet, float **weight_gradients[LAYERS], float *bias_gradients[LAYERS], float learn_rate, int num_training_examples);
+void nnet_subtract_gradients(float *d_weights[LAYERS], float *d_weight_gradients[LAYERS], float *d_biases[LAYERS], float *d_bias_gradients[LAYERS], float learn_rate, int batch_size);
 
 float nnet_cost_function_MSE(float *outputs, float *expected);
 float nnet_cost_function_CCE(float *outputs, float *expected);
-
-void nnet_layer_function_dense_relu(float **weights, int rows, int columns, float *activations, float *bias, float *destination);
-void nnet_layer_function_dense_sigmoid(float **weights, int rows, int columns, float *activations, float *bias, float *destination);
-void nnet_layer_function_dense_softmax(float **weights, int rows, int columns, float *activations, float *bias, float *destination);
 
 void nnet_layer_function_dense_deriv_weights_and_biases(float *current_chain_deriv, int current_layer, float *activation, float **weight_gradients[LAYERS], float *bias_gradients[LAYERS]);
 void nnet_layer_function_dense_deriv_activations(NeuralNet* nnet, float* current_chain_deriv, float* math_buffer, int current_layer);
@@ -86,69 +82,41 @@ void nnet_reset_network(NeuralNet *nnet)
     }
 }
 
-void nnet_free_gpu_nnet_wba(float *d_weights, float *d_biases, float *d_activations)
+void nnet_free_gpu_wba(float *d_weights[LAYERS], float *d_weight_gradients[LAYERS], float *d_biases[LAYERS], float *d_bias_gradients[LAYERS], float *d_activations[LAYERS])
 {
     for (int i = 0; i < LAYERS; i ++)
     {
         cudaErrorCheck(cudaFree(d_activations[i]));
         cudaErrorCheck(cudaFree(d_biases[i]));
+        cudaErrorCheck(cudaFree(d_bias_gradients[i]));
         cudaErrorCheck(cudaFree(d_weights[i]));
+        cudaErrorCheck(cudaFree(d_weight_gradients[i]));
     }
 }
 
-void nnet_alloc_gpu_nnet_wba(float *d_weights, float *d_biases, float *d_activations)
+void nnet_alloc_gpu_wba(float *d_weights[LAYERS], float *d_weight_gradients[LAYERS], float *d_biases[LAYERS], float *d_bias_gradients[LAYERS], float *d_activations[LAYERS])
 {
     for (int i = 0; i < LAYERS; i ++)
     {
         int layer_size = sizeof(float) * npl[i+1];
         cudaErrorCheck(cudaMalloc((void **)&d_weights[i], layer_size * npl[i]));
+        cudaErrorCheck(cudaMalloc((void **)&d_weight_gradients[i], layer_size * npl[i]));
         cudaErrorCheck(cudaMalloc((void **)&d_biases[i], layer_size));
+        cudaErrorCheck(cudaMalloc((void **)&d_bias_gradients[i], layer_size));
         cudaErrorCheck(cudaMalloc((void **)&d_activations[i], layer_size));
     }
 }
 
-void nnet_load_nnet_to_GPU(NeuralNet *nnet)
+void nnet_alloc_gpu_data(float *d_training_inputs, float *d_training_outputs, int num_examples)
 {
-    nnet_free_gpu_nnet_wba();
-    nnet_alloc_gpu_nnet_wba();
-    for (int i = 0; i < LAYERS; i++)
-    {
-        for (int j = 0; j < npl[i+1]; j ++)
-            cudaErrorCheck(cudaMemcpy((void *)(d_weights[i] + j * npl[i]), nnet->weights[i][j], npl[i] * sizeof(float), cudaMemcpyHostToDevice));
-        cudaErrorCheck(cudaMemcpy(d_biases[i], nnet->biases[i], npl[i+1] * sizeof(float), cudaMemcpyHostToDevice));
-    }
+    cudaErrorCheck(cudaMalloc((void **)&d_training_inputs, INPUT_LAYER_SIZE * num_examples * sizeof(float)));
+    cudaErrorCheck(cudaMalloc((void **)&d_training_outputs, OUTPUT_LAYER_SIZE * num_examples * sizeof(float)));
 }
 
-void nnet_load_nnet_from_GPU(NeuralNet *nnet)
+void nnet_free_gpu_data(float *d_training_inputs, float *d_training_outputs)
 {
-    for (int i = 0; i < LAYERS; i++)
-    {
-        for (int j = 0; j < npl[i+1]; j ++)
-            cudaErrorCheck(cudaMemcpy(nnet->weights[i][j], (void *)(d_weights[i] + j * npl[i]), npl[i] * sizeof(float), cudaMemcpyDeviceToHost));
-        cudaErrorCheck(cudaMemcpy(nnet->biases[i], d_biases[i], npl[i+1] * sizeof(float), cudaMemcpyDeviceToHost));
-    }
-}
-
-void nnet_load_data_to_GPU(TrainingSet *training_data)
-{
-    nnet_free_gpu_data();
-
-    // Allocate memory on the device
-    cudaErrorCheck(cudaMalloc((void **)&df_training_inputs, INPUT_LAYER_SIZE * training_data->num_examples * sizeof(float)));
-    cudaErrorCheck(cudaMalloc((void **)&df_training_outputs, OUTPUT_LAYER_SIZE * training_data->num_examples * sizeof(float)));
-
-    // Copy the data from host to device
-    for (int i = 0; i < training_data->num_examples; i++) 
-    {
-        cudaErrorCheck(cudaMemcpy(df_training_inputs + i * INPUT_LAYER_SIZE, training_data->inputs[i], INPUT_LAYER_SIZE * sizeof(float), cudaMemcpyHostToDevice));
-        cudaErrorCheck(cudaMemcpy(df_training_outputs + i * OUTPUT_LAYER_SIZE, training_data->outputs[i], OUTPUT_LAYER_SIZE * sizeof(float), cudaMemcpyHostToDevice));
-    }
-}
-
-void nnet_free_gpu_data()
-{
-    cudaErrorCheck(cudaFree(df_training_inputs));
-    cudaErrorCheck(cudaFree(df_training_outputs));
+    cudaErrorCheck(cudaFree(d_training_inputs));
+    cudaErrorCheck(cudaFree(d_training_outputs));
 }
 
 float nnet_cost_function_MSE(float *outputs, float *expected)
@@ -197,7 +165,7 @@ __global__ void nnet_kernel_layer_function_dense_relu(float *d_weights, int rows
 }
 
 //inputs array must be pointing to gpu memory
-float* nnet_feed_forward(float *d_inputs, float *d_weights[LAYERS], float *d_biases[LAYERS], float *d_activations[LAYERS])
+void nnet_feed_forward(float *d_inputs, float *d_weights[LAYERS], float *d_biases[LAYERS], float *d_activations[LAYERS])
 {
     int i;
     //hidden layers:
@@ -209,8 +177,6 @@ float* nnet_feed_forward(float *d_inputs, float *d_weights[LAYERS], float *d_bia
 
     //last/output layer:
     nnet_kernel_layer_function_dense_relu<<<grid_size, block_size>>>(d_weights[i], npl[i + 1], npl[i], d_activations[i - 1], d_biases[i], d_activations[i]);
-    cudaDeviceSynchronize();
-    return d_activations[LAYERS - 1];
 }
 
 __global__ void nnnet_kernel_layer_function_dense_deriv_weights_and_biases(float *d_current_chain_deriv, int current_layer, float *d_activation, float *d_weight_gradient, float *d_bias_gradient)
@@ -253,7 +219,7 @@ __global__ void nnet_kernel_layer_function_dense_deriv_activations(float *d_weig
 
     if (i < d_npl[current_layer + 1])
         temp[i] = d_current_chain_deriv[i];
-    __syncthreads;
+    __syncthreads();
     if (i < d_npl[current_layer])
     {
         for (j = 0; j < d_npl[current_layer + 1]; j++)
@@ -319,7 +285,7 @@ void nnet_activation_function_deriv_sigmoid(float* current_chain_deriv, int curr
 }
 
 //layer_size is equal to npl[LAYERS]
-void nnet_kernel_cost_function_deriv_MSE(float *d_destination, float *d_activations, float *d_training_output, int layer_size)
+__global__ void nnet_kernel_cost_function_deriv_MSE(float *d_destination, float *d_activations, float *d_training_output, int layer_size)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i < layer_size)
@@ -367,126 +333,207 @@ void nnet_backprop(float *d_weights[LAYERS], float *d_biases[LAYERS], float *d_a
     }
     //the first layer
     nnet_kernel_activation_function_deriv_relu<<<grid_size, block_size>>>(d_current_chain_deriv, npl[layer+1], d_activations[layer]);
-    nnnet_kernel_layer_function_dense_deriv_weights_and_biases<<<grid_size, block_size>>>(d_current_chain_deriv, layer, d_activations[layer-1], d_weight_gradients[layer], d_bias_gradients[layer]);
+    nnnet_kernel_layer_function_dense_deriv_weights_and_biases<<<grid_size, block_size>>>(d_current_chain_deriv, layer, d_training_input, d_weight_gradients[layer], d_bias_gradients[layer]);
     nnet_kernel_layer_function_dense_deriv_activations<<<grid_size, block_size>>>(d_weights[layer], layer, d_current_chain_deriv);
 }
 
-// void nnet_backprop(NeuralNet *nnet, float *activations[LAYERS], float **weight_gradients[LAYERS], float *bias_gradients[LAYERS], float *current_chain_deriv, float *math_buffer, float *training_input, float *training_output)
-// {
-//     int layer = LAYERS-1; 
-
-//     //nnet_feed_forward(training_input, nnet, activations);
-
-//     //set the current chain rule derivative value to the derivative of the cost function with respect to the last activation.
-//     nnet_cost_function_deriv_MSE(current_chain_deriv, activations[LAYERS-1], training_output);
-
-//     for (layer = LAYERS - 1; layer > 0; layer--)
-//     {
-//         //applies derivative of activation function (relu, sigmoid, etc) to the current_chain_deriv, in accordance to the chain rule
-//         nnet_activation_function_deriv_relu(current_chain_deriv, layer, activations[layer]);
-
-//         //updates the weight and bias gradients based on the current_chain_deriv.
-//         nnet_layer_function_dense_deriv_weights_and_biases(current_chain_deriv, layer, activations[layer-1], weight_gradients, bias_gradients);
-
-//         //updates the current_chain_deriv matrix for the next layer function derivative.
-//         nnet_layer_function_dense_deriv_activations(nnet, current_chain_deriv, math_buffer, layer);
-//     }
-//     //the first layer
-//     nnet_activation_function_deriv_relu(current_chain_deriv, layer, activations[layer]);
-//     nnet_layer_function_dense_deriv_weights_and_biases(current_chain_deriv, layer, training_input, weight_gradients, bias_gradients);
-//     nnet_layer_function_dense_deriv_activations(nnet, current_chain_deriv, math_buffer, layer);
-// }
-
-int nnet_optimize(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batches, int iterations, float learn_rate)
+__global__ void nnet_kernel_subtract_gradients(float *d_weights, float *d_weight_gradients, float *d_biases, float *d_bias_gradients, float multiplier, int rows, int cols)
 {
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i < rows)
+    {
+        for (int j = 0; j < cols; j ++)
+        {
+            d_weights[i * cols + j] -= d_weight_gradients[i * cols + j] * multiplier;
+            d_weight_gradients[i * cols + j] = 0;
+        }
+        d_biases[i] -= d_bias_gradients[i] * multiplier;
+        d_bias_gradients[i] = 0;
+    }
+}
+
+__host__ void nnet_subtract_gradients(float *d_weights[LAYERS], float *d_weight_gradients[LAYERS], float *d_biases[LAYERS], float *d_bias_gradients[LAYERS], float learn_rate, int batch_size)
+{
+    int layer;
+    float mult = learn_rate / batch_size;
+
+    dim3 grid_size((MAX_LAYER_SIZE + BLOCK_SIZE - 1)/BLOCK_SIZE);
+    dim3 block_size(BLOCK_SIZE);
+
+    for (layer = 0; layer < LAYERS; layer++)
+    {
+        nnet_kernel_subtract_gradients<<<grid_size, block_size>>>(d_weights[layer], d_weight_gradients[layer], d_biases[layer], d_bias_gradients[layer], mult, npl[layer+1], npl[layer]);
+    }
+}
+
+__global__ void test_kernel(float *d_a, int size)
+{
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i < size)
+        d_a[i] = 10.0f;
+}
+
+int nnet_optimize(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batches, int epochs, float learn_rate)
+{
+    //nnet_print(nnet);
     printf("initializing backprop... ");
     const int examples_per_batch = num_mini_batches ? training_set->num_examples / num_mini_batches : 0;
-    int iteration;
-    int nthExample;
-    int batch;
-    int i;
+    int epoch, batch, nthExample;
+    int i, j;
     int largest_layer_size = 0;
+
+    // allocation of host data
     float *weight_gradients[LAYERS];
     float *bias_gradients[LAYERS];
     float *activations[LAYERS];
     float *chain_rule_vector;
 
+    // initialization of host data
+    for (i = 0; i <= LAYERS; i ++)
+        if (npl[i] > largest_layer_size)
+            largest_layer_size = npl[i];
+
+    for (i = 0; i < LAYERS; i++)
+    {
+        weight_gradients[i] = laa_allocVector(npl[i + 1] * npl[i], 0);
+        bias_gradients[i] = laa_allocVector(npl[i + 1], 0);
+        activations[i] = laa_allocVector(npl[i + 1], 0);
+    }
+    chain_rule_vector = laa_allocVector(largest_layer_size, 0);
+
+    // allocation of device data
     float *d_weight_gradients[LAYERS];
     float *d_bias_gradients[LAYERS];
 
     float *d_weights[LAYERS];
     float *d_biases[LAYERS];
-    float *d_activations[LAYERS];
+    float *d_activations[LAYERS]; //activations don't need to be copied from host to device because their values will be set in the first forward pass
 
     float *d_chain_rule_vector;
 
-    for (i = 0; i < LAYERS; i++)
+    float *d_training_inputs;
+    float *d_training_outputs;
+
+    //nnet_alloc_gpu_wba(d_weights, d_weight_gradients, d_biases, d_bias_gradients, d_activations);
+    //nnet_alloc_gpu_data(d_training_inputs, d_training_outputs, training_set->num_examples);
+
+    for (i = 0; i < LAYERS; i ++)
     {
-        if (npl[i] > largest_layer_size)
-            largest_layer_size = npl[i];
-        weight_gradients[i] = laa_allocVector(npl[i + 1] * npl[i], 0);
-        bias_gradients[i] = laa_allocVector(npl[i + 1], 0);
-        activations[i] = laa_allocVector(npl[i + 1], 0);
+        int layer_size = sizeof(float) * npl[i+1];
+        cudaErrorCheck(cudaMalloc((void **)&d_weights[i], layer_size * npl[i]));
+        cudaErrorCheck(cudaMalloc((void **)&d_weight_gradients[i], layer_size * npl[i]));
+        cudaErrorCheck(cudaMalloc((void **)&d_biases[i], layer_size));
+        cudaErrorCheck(cudaMalloc((void **)&d_bias_gradients[i], layer_size));
+        cudaErrorCheck(cudaMalloc((void **)&d_activations[i], layer_size));
     }
 
-    if (npl[i] > largest_layer_size)
-        largest_layer_size = npl[i];
-    chain_rule_vector = laa_allocVector(largest_layer_size, 0);
+    cudaErrorCheck(cudaMalloc((void **)&d_training_inputs, INPUT_LAYER_SIZE * training_set->num_examples * sizeof(float)));
+    cudaErrorCheck(cudaMalloc((void **)&d_training_outputs, OUTPUT_LAYER_SIZE * training_set->num_examples * sizeof(float)));
+
+    cudaMalloc((void **)&d_chain_rule_vector, largest_layer_size * sizeof(float));
+
+    // initialization of device data (copying from host)
+    for (i = 0; i < LAYERS; i++)
+    {
+        // Copy the weight and bias gradients from host to device
+        cudaMemcpy(d_weight_gradients[i], weight_gradients[i], npl[i] * npl[i+1] * sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_bias_gradients[i], bias_gradients[i], npl[i+1] * sizeof(float), cudaMemcpyHostToDevice);
+
+        // Copy the weights and biases from host neural network struct to device
+        for (j = 0; j < npl[i+1]; j ++)
+            cudaErrorCheck(cudaMemcpy((void *)(d_weights[i] + j * npl[i]), nnet->weights[i][j], npl[i] * sizeof(float), cudaMemcpyHostToDevice));
+        cudaErrorCheck(cudaMemcpy((void *)d_biases[i], nnet->biases[i], npl[i+1] * sizeof(float), cudaMemcpyHostToDevice));
+    }
+    
+    for (i = 0; i < training_set->num_examples; i++) 
+    {
+        // Copy the training data from host to device
+        cudaErrorCheck(cudaMemcpy((void *)(d_training_inputs + i * INPUT_LAYER_SIZE), training_set->inputs[i], INPUT_LAYER_SIZE * sizeof(float), cudaMemcpyHostToDevice));
+        cudaErrorCheck(cudaMemcpy((void *)(d_training_outputs + i * OUTPUT_LAYER_SIZE), training_set->outputs[i], OUTPUT_LAYER_SIZE * sizeof(float), cudaMemcpyHostToDevice));
+    }
+
+    cudaMemcpy(d_chain_rule_vector, chain_rule_vector, largest_layer_size*sizeof(float), cudaMemcpyHostToDevice);
+
     printf("done\n");
 
-    for (iteration = iterations; iteration--;)
+    for (epoch = epochs; epoch--;)
     {
-        printf("\rtraining... epoch %d/%d", iterations-iteration, iterations);
-        //printf("\rtraining... %d/%d cost: %f\n", iterations-iteration, iterations, nnet_total_cost(nnet, training_set->inputs, training_set->outputs, training_set->num_examples));
+        printf("\rtraining... epoch %d/%d", epochs-epoch, epochs);
+        //printf("\rtraining... %d/%d cost: %f\n", epochs-epoch, epochs, nnet_total_cost(nnet, training_set->inputs, training_set->outputs, training_set->num_examples));
         for (batch = 0; batch < num_mini_batches; batch++)
         {
             for (nthExample = batch * examples_per_batch; nthExample < (batch + 1) * examples_per_batch; nthExample++)
             {
-                nnet_backprop(float *d_weights[LAYERS], float *d_biases[LAYERS], float *d_activations[LAYERS], float *d_weight_gradients[LAYERS], float *d_bias_gradients[LAYERS], float *d_current_chain_deriv, float *d_training_input, float *d_training_output)
+                nnet_backprop(d_weights, d_biases, d_activations, d_weight_gradients, d_bias_gradients, d_chain_rule_vector, (float *)(d_training_inputs + nthExample * INPUT_LAYER_SIZE), (float *)(d_training_outputs + nthExample * OUTPUT_LAYER_SIZE));
             }
-            nnet_subtract_gradients(nnet, weight_gradients, bias_gradients, learn_rate, examples_per_batch);
+            nnet_subtract_gradients(d_weights, d_weight_gradients, d_biases, d_bias_gradients, learn_rate, examples_per_batch);
         }
         for (; nthExample < training_set->num_examples; nthExample++)
         {
-            nnet_backprop(nnet, activations, weight_gradients, bias_gradients, chain_rule_vector, math_buffer, training_set->inputs[nthExample], training_set->outputs[nthExample]);
+            nnet_backprop(d_weights, d_biases, d_activations, d_weight_gradients, d_bias_gradients, d_chain_rule_vector, (float *)(d_training_inputs + nthExample * INPUT_LAYER_SIZE), (float *)(d_training_outputs + nthExample * OUTPUT_LAYER_SIZE));
         }
-        nnet_subtract_gradients(nnet, weight_gradients, bias_gradients, learn_rate, examples_per_batch);
-
-        if (isnan(activations[0][0]))
-        {
-            printf("\ndiverged!\n");
-            return 0;
-        }
+        nnet_subtract_gradients(d_weights, d_weight_gradients, d_biases, d_bias_gradients, learn_rate, examples_per_batch);
     }
     printf("done\n");
 
+    //copy weights and biases from device back to host's neural network struct
+    for (int i = 0; i < LAYERS; i++)
+    {
+        for (int j = 0; j < npl[i+1]; j ++)
+            cudaErrorCheck(cudaMemcpy(nnet->weights[i][j], (void *)(d_weights[i] + j * npl[i]), npl[i] * sizeof(float), cudaMemcpyDeviceToHost));
+        cudaErrorCheck(cudaMemcpy(nnet->biases[i], d_biases[i], npl[i+1] * sizeof(float), cudaMemcpyDeviceToHost));
+    }
+
+    // free host memory
     for (i = 0; i < LAYERS; i++)
     {
-        laa_freeMatrix(weight_gradients[i], npl[i + 1]);
+        laa_freeVector(weight_gradients[i]);
         laa_freeVector(bias_gradients[i]);
         laa_freeVector(activations[i]);
     }
     laa_freeVector(chain_rule_vector);
-    laa_freeVector(math_buffer);
+
+    // free device memory
+    nnet_free_gpu_wba(d_weights, d_weight_gradients, d_biases, d_bias_gradients, d_activations);
+    nnet_free_gpu_data(d_training_inputs, d_training_outputs);
+    cudaFree(d_chain_rule_vector);
     return 1;
 }
 
-void nnet_subtract_gradients(NeuralNet *nnet, float **weight_gradients[LAYERS], float *bias_gradients[LAYERS], float learn_rate, int num_training_examples)
+//computes activations of the next layer and outputs it into destination
+void nnetcpu_layer_function_dense_relu(float **weights, int rows, int columns, float *activations, float *bias, float *destination)
 {
-    int layer, i, j;
-    for (layer = 0; layer < LAYERS; layer++)
-    {
-        for (i = 0; i < npl[layer + 1]; i++)
-        {
-            for (j = 0; j < npl[layer]; j++)
-            {
-                nnet->weights[layer][i][j] -= weight_gradients[layer][i][j] * learn_rate / num_training_examples;
-                weight_gradients[layer][i][j] = 0;
-            }
-            nnet->biases[layer][i] -= bias_gradients[layer][i] * learn_rate / num_training_examples;
-            bias_gradients[layer][i] = 0;
-        }
-    }
+    for (int i = 0; i < rows; i++)
+        destination[i] = relu(laa_dot(activations, weights[i], columns) + bias[i]);
+}
+
+void nnetcpu_layer_function_dense_sigmoid(float **weights, int rows, int columns, float *activations, float *bias, float *destination)
+{
+    for (int i = 0; i < rows; i++)
+        destination[i] = sigmoid(laa_dot(activations, weights[i], columns) + bias[i]);
+}
+
+void nnetcpu_layer_function_dense_softmax(float **weights, int rows, int columns, float *activations, float *bias, float *destination)
+{
+    float sum = 0;
+    for (int i = 0; i < rows; i++)
+        sum+=powf(2.718281828459, activations[i]);
+    for (int i = 0; i < rows; i++)
+        destination[i] = powf(2.718281828459, activations[i])/sum;
+}
+
+float *nnetcpu_feed_forward(float *inputs, NeuralNet *nnet, float *activations[LAYERS])
+{
+    int i;
+    //hidden layers:
+    nnetcpu_layer_function_dense_relu(nnet->weights[0], npl[1], npl[0], inputs, nnet->biases[0], activations[0]);
+    for (i = 1; i < LAYERS-1; i++)
+        nnetcpu_layer_function_dense_relu(nnet->weights[i], npl[i + 1], npl[i], activations[i - 1], nnet->biases[i], activations[i]);
+
+    //last/output layer:
+    nnetcpu_layer_function_dense_relu(nnet->weights[i], npl[i + 1], npl[i], activations[i - 1], nnet->biases[i], activations[i]);
+
+    return activations[LAYERS - 1];
 }
 
 float nnet_test_results(NeuralNet *nnet, TestingSet *test_set, int print_each_test, int print_results)
@@ -499,7 +546,7 @@ float nnet_test_results(NeuralNet *nnet, TestingSet *test_set, int print_each_te
     }
     for (i = 0; i < test_set->num_examples; i++)
     {
-        //if (laa_maxIndexValue(test_set->outputs[i], npl[LAYERS]) != laa_maxIndexValue(nnet_feed_forward(test_set->inputs[i], nnet, activations), npl[LAYERS]))
+        if (laa_maxIndexValue(test_set->outputs[i], npl[LAYERS]) != laa_maxIndexValue(nnetcpu_feed_forward(test_set->inputs[i], nnet, activations), npl[LAYERS]))
             numWrong++;
     }
     if (print_results)

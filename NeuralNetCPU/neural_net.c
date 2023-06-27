@@ -229,6 +229,7 @@ void nnet_backprop(NeuralNet *nnet, float *activations[LAYERS], float **weight_g
 
 int nnet_optimize(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batches, int iterations, float learn_rate)
 {
+    //nnet_print(nnet);
     printf("initializing backprop... ");
     const int examples_per_batch = num_mini_batches ? training_set->num_examples / num_mini_batches : 0;
     int iteration;
@@ -266,8 +267,11 @@ int nnet_optimize(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batch
             for (nthExample = batch * examples_per_batch; nthExample < (batch + 1) * examples_per_batch; nthExample++)
             {
                 nnet_backprop(nnet, activations, weight_gradients, bias_gradients, chain_rule_vector, math_buffer, training_set->inputs[nthExample], training_set->outputs[nthExample]);
+                //break;
             }
-            nnet_subtract_gradients(nnet, weight_gradients, bias_gradients, learn_rate, examples_per_batch);
+            // nnet_subtract_gradients(nnet, weight_gradients, bias_gradients, learn_rate, examples_per_batch);
+            // nnet_print(nnet);
+            // exit(1);
         }
         for (; nthExample < training_set->num_examples; nthExample++)
         {
@@ -282,6 +286,8 @@ int nnet_optimize(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batch
         }
     }
     printf("done\n");
+
+    //nnet_print(nnet);
 
     for (i = 0; i < LAYERS; i++)
     {

@@ -22,8 +22,8 @@ This header file contains declarations for a neural network implemented in C.
 #include "linear_alg.h"
 #include "data_handler.h"
 
-#define MAX_LAYER_SIZE 784
-#define BLOCK_SIZE 1024
+#define MAX_LAYER_SIZE 32
+#define BLOCK_SIZE 32
 
 // LAYERS value does not count the input layer
 #define LAYERS 3
@@ -32,7 +32,6 @@ This header file contains declarations for a neural network implemented in C.
 #define INPUT_LAYER_SIZE 784
 #define HIDDEN_LAYER_SIZES 30, 20
 #define OUTPUT_LAYER_SIZE 10
-
 
 // #define INPUT_LAYER_SIZE 4
 // #define HIDDEN_LAYER_SIZES 5, 5
@@ -56,14 +55,13 @@ NeuralNet* nnet_init(float init_min, float init_max);
 
 void nnet_free(NeuralNet *nnet);
 void nnet_reset_network(NeuralNet* nnet);
-float* nnet_feed_forward(float *d_inputs, float *d_weights[LAYERS], float *d_biases[LAYERS], float *d_activations[LAYERS]);
+void nnet_feed_forward(float *d_inputs, float *d_weights[LAYERS], float *d_biases[LAYERS], float *d_activations[LAYERS]);
 float nnet_total_cost(float **correct_outputs, float ** predictions, int num_data_points);
 int nnet_optimize(NeuralNet* nnet, TrainingSet* training_set, int num_mini_batches, int iterations, float learn_rate);
-void nnet_load_nnet_to_GPU(NeuralNet *nnet);
-void nnet_load_nnet_from_GPU(NeuralNet *nnet);
-void nnet_free_gpu_nnet_wba();
-void nnet_load_data_to_GPU(TrainingSet *training_data);
-void nnet_free_gpu_data();
+void nnet_free_gpu_wba(float *d_weights[LAYERS], float *d_weight_gradients[LAYERS], float *d_biases[LAYERS], float *d_bias_gradients[LAYERS], float *d_activations[LAYERS]);
+void nnet_alloc_gpu_wba(float *d_weights[LAYERS], float *d_weight_gradients[LAYERS], float *d_biases[LAYERS], float *d_bias_gradients[LAYERS], float *d_activations[LAYERS]);
+void nnet_alloc_gpu_data(float *d_training_inputs, float *d_training_outputs, int num_examples);
+void nnet_free_gpu_data(float *d_training_inputs, float *d_training_outputs);
 float nnet_test_results(NeuralNet* nnet, TestingSet* test_set, int print_each_test, int print_results);
 void nnet_print(NeuralNet* nnet);
 int nnet_save_to_file(NeuralNet* nnet, const char* fileName);

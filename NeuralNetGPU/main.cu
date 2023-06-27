@@ -3,9 +3,20 @@
 #include <windows.h>
 #include <time.h>
 
-// best mnist configuration (that I have tested):
-#define LEARN_RATE 0.05
-#define EPOCHS 10
+// // best mnist configuration (that I have tested):
+// #define LEARN_RATE 0.05
+// #define EPOCHS 10
+ 
+// #define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training
+// #define NUM_TESTING_EXAMPLES 10000       // number of data points used for testing
+ 
+// #define BATCHES 150
+
+// #define INIT_MIN -0.1
+// #define INIT_MAX 0.1
+
+#define LEARN_RATE 0.01
+#define EPOCHS 1
  
 #define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training
 #define NUM_TESTING_EXAMPLES 10000       // number of data points used for testing
@@ -46,9 +57,6 @@ int main()
 
     printf("done\n");
 
-    nnet_load_data_to_GPU(training_set);
-    nnet_load_nnet_to_GPU(nnet);
-
     // start timing
     LARGE_INTEGER frequency;
     LARGE_INTEGER start, end;
@@ -56,26 +64,16 @@ int main()
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start);
 
-    //nnet_optimize(nnet, training_set, BATCHES, EPOCHS, LEARN_RATE);
+    nnet_optimize(nnet, training_set, BATCHES, EPOCHS, LEARN_RATE);
     
     // end timing
     QueryPerformanceCounter(&end);
     interval = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
     printf("\ntraining time: %.6fs\n", interval);
 
-    nnet_load_nnet_from_GPU(nnet);
-
-    //printf("final cost: %f\n", nnet_total_cost(nnet, training_set->inputs, training_set->outputs, training_set->num_examples));
     (void)nnet_test_results(nnet, testing_set, 0, 1);
         
     nnet_save_to_file(nnet, "bin/testNet.nnet");
-
-    //free memory
-    nnet_free_gpu_nnet_wba();
-    nnet_free_gpu_data();
-    nnet_free(nnet);
-    dh_free_testing_set(testing_set);
-    dh_free_training_set(training_set);
 
     // nnet_load_from_file(nnet, "bin/testNet.nnet");
     // nnet_testing_results(nnet, testing_set, 0, 1);
