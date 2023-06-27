@@ -56,12 +56,12 @@ NeuralNet* nnet_init(float init_min, float init_max);
 
 void nnet_free(NeuralNet *nnet);
 void nnet_reset_network(NeuralNet* nnet);
-float* nnet_feed_forward(float *inputs, NeuralNet* nnet, float* activations[LAYERS]);
-float nnet_total_cost(NeuralNet* nnet, float** inputs, float** outputs, int n);
+float* nnet_feed_forward(float *d_inputs, float *d_weights[LAYERS], float *d_biases[LAYERS], float *d_activations[LAYERS]);
+float nnet_total_cost(float **correct_outputs, float ** predictions, int num_data_points);
 int nnet_optimize(NeuralNet* nnet, TrainingSet* training_set, int num_mini_batches, int iterations, float learn_rate);
 void nnet_load_nnet_to_GPU(NeuralNet *nnet);
 void nnet_load_nnet_from_GPU(NeuralNet *nnet);
-void nnet_free_gpu_nnet_and_activations();
+void nnet_free_gpu_nnet_wba();
 void nnet_load_data_to_GPU(TrainingSet *training_data);
 void nnet_free_gpu_data();
 float nnet_test_results(NeuralNet* nnet, TestingSet* test_set, int print_each_test, int print_results);

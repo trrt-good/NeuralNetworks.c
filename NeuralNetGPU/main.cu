@@ -65,13 +65,13 @@ int main()
 
     nnet_load_nnet_from_GPU(nnet);
 
-    printf("final cost: %f\n", nnet_total_cost(nnet, training_set->inputs, training_set->outputs, training_set->num_examples));
+    //printf("final cost: %f\n", nnet_total_cost(nnet, training_set->inputs, training_set->outputs, training_set->num_examples));
     (void)nnet_test_results(nnet, testing_set, 0, 1);
         
     nnet_save_to_file(nnet, "bin/testNet.nnet");
 
     //free memory
-    nnet_free_gpu_nnet_and_activations();
+    nnet_free_gpu_nnet_wba();
     nnet_free_gpu_data();
     nnet_free(nnet);
     dh_free_testing_set(testing_set);

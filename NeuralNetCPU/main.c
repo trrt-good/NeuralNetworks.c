@@ -1,6 +1,6 @@
 #include "stdio.h"
 #include "neural_net.h"
-#include <profileapi.h>
+#include <windows.h>
 //#include <omp.h>
 #include <time.h>
 
@@ -29,6 +29,8 @@
 
 int main()
 {
+    printf("Available Threads: %d\nThreads used: %d\n", omp_get_max_threads(), MAX_THREADS);
+    
     srand(time(NULL));
     NeuralNet* nnet = nnet_init(INIT_MIN, INIT_MAX);
 

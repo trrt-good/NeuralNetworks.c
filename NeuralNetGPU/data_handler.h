@@ -6,7 +6,6 @@
 #include <string.h>
 #include <time.h>
 
-
 /*
 The training_set struct represents a set of data used for training a neural network.
 It has the number of examples in the set, as well as the inputs and corresponding outputs for each example.
