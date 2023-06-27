@@ -22,7 +22,7 @@ This header file contains declarations for a neural network implemented in C.
 #include "linear_alg.h"
 #include "data_handler.h"
 
-#define MAX_LAYER_SIZE 32
+#define MAX_LAYER_SIZE 784
 #define BLOCK_SIZE 32
 
 // LAYERS value does not count the input layer

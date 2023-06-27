@@ -34,7 +34,7 @@ This header file contains declarations for a neural network implemented in C.
 // #define HIDDEN_LAYER_SIZES 5, 5
 // #define OUTPUT_LAYER_SIZE 3
 
-#define MAX_THREADS 20
+#define MAX_THREADS 8
 
 /*
 The neural_network struct represents a neural network with multiple layers.

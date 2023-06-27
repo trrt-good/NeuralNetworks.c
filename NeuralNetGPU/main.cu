@@ -15,8 +15,8 @@
 // #define INIT_MIN -0.1
 // #define INIT_MAX 0.1
 
-#define LEARN_RATE 0.01
-#define EPOCHS 1
+#define LEARN_RATE 0.05
+#define EPOCHS 10
  
 #define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training
 #define NUM_TESTING_EXAMPLES 10000       // number of data points used for testing

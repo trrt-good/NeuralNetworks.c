@@ -269,7 +269,7 @@ int nnet_optimize(NeuralNet *nnet, TrainingSet *training_set, int num_mini_batch
                 nnet_backprop(nnet, activations, weight_gradients, bias_gradients, chain_rule_vector, math_buffer, training_set->inputs[nthExample], training_set->outputs[nthExample]);
                 //break;
             }
-            // nnet_subtract_gradients(nnet, weight_gradients, bias_gradients, learn_rate, examples_per_batch);
+            nnet_subtract_gradients(nnet, weight_gradients, bias_gradients, learn_rate, examples_per_batch);
             // nnet_print(nnet);
             // exit(1);
         }

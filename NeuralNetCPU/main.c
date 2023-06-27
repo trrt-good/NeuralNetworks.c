@@ -5,7 +5,7 @@
 #include <time.h>
 
 // best mnist configuration (that I have tested):
-#define LEARN_RATE 0.01
+#define LEARN_RATE 0.05
 #define EPOCHS 10
  
 #define NUM_TRAINING_EXAMPLES 60000     // number of data points used for training
