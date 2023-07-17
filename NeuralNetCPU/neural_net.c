@@ -348,7 +348,7 @@ int nnet_optimize_parallel(NeuralNet *nnet, TrainingSet *training_set, int paral
 
             for (i = 0; i < MAX_THREADS; i++)
             {
-                nnet_subtract_gradients(nnet, weight_gradients[i], bias_gradients[i], learn_rate, examples_per_thread);
+                nnet_subtract_gradients(nnet, weight_gradients[i], bias_gradients[i], learn_rate, examples_per_thread*MAX_THREADS);
             }
         }
 
@@ -356,7 +356,7 @@ int nnet_optimize_parallel(NeuralNet *nnet, TrainingSet *training_set, int paral
         {
             nnet_backprop(nnet, activations[0], weight_gradients[0], bias_gradients[0], chain_rule_vector[0], math_buffer[0], training_set->inputs[nthExample], training_set->outputs[nthExample]);
         }
-        nnet_subtract_gradients(nnet, weight_gradients[0], bias_gradients[0], learn_rate, examples_per_thread);
+        nnet_subtract_gradients(nnet, weight_gradients[0], bias_gradients[0], learn_rate, examples_per_thread*MAX_THREADS);
 
         if (isnan(activations[LAYERS - 1][0][0]))
         {
