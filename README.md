@@ -1,6 +1,6 @@
 # NeuralNetworks.c
 
-This repository contains a simple machine learning package that includes implementations for both CPU and GPU. The package is designed to facilitate neural network operations leveraging the power of multicore CPUs and CUDA-enabled GPUs.
+This project presents a machine learning library focused on a simple and easy to use neural network implementation in C. It provides two versions: one optimized for CPU, utilizing OpenMP for parallel processing, and the other for nvidia GPUs, using CUDA. The project's design prioritizes ease of installation and usage, making it useful for both beginers and experienced users.
 
 ## Features
 
