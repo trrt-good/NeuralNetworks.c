@@ -1,6 +1,6 @@
 # NeuralNetworks.c
 
-This project presents a machine learning library focused on a simple and easy to use neural network training and inference in C. It provides two versions: one optimized for CPU, utilizing OpenMP for parallel processing, and the other for nvidia GPUs, using CUDA. The project's design prioritizes ease of installation and usage, making it useful for both beginers and experienced users.
+This project presents a machine learning library focused on simple and easy to use neural network training and inference in C. It provides two versions: one optimized for CPU, utilizing OpenMP for parallel processing, and the other for nvidia GPUs, using CUDA. The project's design prioritizes ease of installation and usage, making it useful for both beginers and experienced users.
 
 ## Features
 
